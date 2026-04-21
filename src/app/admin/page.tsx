@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Property } from '@/lib/types'
-import { Building2, Plus, Eye, Pencil, Trash2, Copy, ExternalLink, Upload, X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { Building2, Plus, Eye, Pencil, Trash2, Copy, ExternalLink, Upload, X, CheckCircle, AlertCircle, Loader2, Tag } from 'lucide-react'
 
 interface ImportResult {
   uid: string
@@ -36,6 +36,7 @@ export default function AdminPage() {
   const [authenticated, setAuthenticated] = useState(false)
   const [authError, setAuthError] = useState('')
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [togglingStatus, setTogglingStatus] = useState<string | null>(null)
   const [importResults, setImportResults] = useState<ImportResult[]>([])
   const [showImport, setShowImport] = useState(false)
   const [savingAll, setSavingAll] = useState(false)
@@ -67,6 +68,22 @@ export default function AdminPage() {
     await fetch(`/api/properties/${id}`, { method: 'DELETE', headers: { 'x-admin-key': adminKey } })
     setProperties(prev => prev.filter(p => p.id !== id))
     setDeleting(null)
+  }
+
+  const handleToggleStatus = async (p: Property) => {
+    const newStatus = p.status === 'sold' ? 'available' : 'sold'
+    const label = newStatus === 'sold' ? '¿Marcar esta propiedad como VENDIDA?' : '¿Marcar esta propiedad como Disponible?'
+    if (!confirm(label)) return
+    setTogglingStatus(p.id)
+    const res = await fetch(`/api/properties/${p.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+      body: JSON.stringify({ status: newStatus }),
+    })
+    if (res.ok) {
+      setProperties(prev => prev.map(prop => prop.id === p.id ? { ...prop, status: newStatus } : prop))
+    }
+    setTogglingStatus(null)
   }
 
   const copyLink = (id: string) => {
@@ -221,7 +238,10 @@ export default function AdminPage() {
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold text-[#0a1628]">Propiedades</h1>
-            <p className="text-sm text-gray-500">{properties.length} propiedades activas</p>
+            <p className="text-sm text-gray-500">
+              {properties.filter(p => p.status !== 'sold').length} disponibles
+              {properties.filter(p => p.status === 'sold').length > 0 && ` · ${properties.filter(p => p.status === 'sold').length} vendidas`}
+            </p>
           </div>
           <div className="flex gap-2">
             <input ref={fileRef} type="file" accept=".pdf" multiple className="hidden"
@@ -314,13 +334,20 @@ export default function AdminPage() {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {properties.map(p => (
-              <div key={p.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                {p.image_url
-                  ? <img src={p.image_url} alt={p.address} className="w-full h-40 object-cover" />
-                  : <div className="w-full h-40 bg-[#0a1628] flex items-center justify-center">
-                      <Building2 className="w-12 h-12 text-[#C9A840]/50" />
+              <div key={p.id} className={`bg-white rounded-xl border shadow-sm overflow-hidden ${p.status === 'sold' ? 'border-red-200 opacity-80' : 'border-gray-200'}`}>
+                <div className="relative">
+                  {p.image_url
+                    ? <img src={p.image_url} alt={p.address} className="w-full h-40 object-cover" />
+                    : <div className="w-full h-40 bg-[#0a1628] flex items-center justify-center">
+                        <Building2 className="w-12 h-12 text-[#C9A840]/50" />
+                      </div>
+                  }
+                  {p.status === 'sold' && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <span className="bg-red-600 text-white text-sm font-bold px-4 py-1.5 rounded-full tracking-wider">VENDIDA</span>
                     </div>
-                }
+                  )}
+                </div>
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <h3 className="font-bold text-[#0a1628] text-sm leading-tight">{p.address}</h3>
@@ -342,8 +369,17 @@ export default function AdminPage() {
                       className="flex items-center gap-1 text-xs bg-gray-50 text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
                       <Pencil className="w-3 h-3" /> Editar
                     </button>
+                    <button onClick={() => handleToggleStatus(p)} disabled={togglingStatus === p.id}
+                      className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50 ${
+                        p.status === 'sold'
+                          ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
+                          : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
+                      }`}>
+                      <Tag className="w-3 h-3" />
+                      {togglingStatus === p.id ? '...' : p.status === 'sold' ? 'Disponible' : 'Vendida'}
+                    </button>
                     <button onClick={() => handleDelete(p.id)} disabled={deleting === p.id}
-                      className="flex items-center gap-1 text-xs bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50">
+                      className="flex items-center gap-1 text-xs bg-gray-50 text-gray-500 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50">
                       <Trash2 className="w-3 h-3" /> {deleting === p.id ? '...' : 'Eliminar'}
                     </button>
                   </div>

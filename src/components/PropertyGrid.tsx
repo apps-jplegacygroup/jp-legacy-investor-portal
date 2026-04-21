@@ -32,7 +32,10 @@ export default function PropertyGrid({ properties }: { properties: Property[] })
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h2 className="text-xl font-bold text-[#0a1628]">
           Oportunidades de Inversión
-          <span className="ml-2 text-sm font-normal text-gray-500">({filtered.length} disponibles)</span>
+          <span className="ml-2 text-sm font-normal text-gray-500">
+            ({filtered.filter(p => p.status !== 'sold').length} disponibles
+            {filtered.filter(p => p.status === 'sold').length > 0 && ` · ${filtered.filter(p => p.status === 'sold').length} vendidas`})
+          </span>
         </h2>
       </div>
 
@@ -85,15 +88,22 @@ export default function PropertyGrid({ properties }: { properties: Property[] })
             const y1 = f.projections[0]
             return (
               <Link key={p.id} href={`/property/${p.id}`} className="group">
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-lg hover:border-[#C9A840]/50 transition-all duration-200">
+                <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all duration-200 ${p.status === 'sold' ? 'border-gray-200 opacity-75' : 'border-gray-200 hover:shadow-lg hover:border-[#C9A840]/50'}`}>
+                  <div className="relative">
                   {p.image_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.image_url} alt={p.address} className="w-full h-48 object-cover group-hover:scale-[1.02] transition-transform duration-300" />
+                    <img src={p.image_url} alt={p.address} className={`w-full h-48 object-cover transition-transform duration-300 ${p.status !== 'sold' ? 'group-hover:scale-[1.02]' : ''}`} />
                   ) : (
                     <div className="w-full h-48 bg-gradient-to-br from-[#0a1628] to-[#152238] flex items-center justify-center">
                       <Building2 className="w-14 h-14 text-[#C9A840]/40" />
                     </div>
                   )}
+                  {p.status === 'sold' && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <span className="bg-red-600 text-white text-base font-bold px-5 py-2 rounded-full tracking-widest">VENDIDA</span>
+                    </div>
+                  )}
+                  </div>
                   <div className="p-5">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs bg-[#0a1628] text-[#C9A840] font-semibold px-2.5 py-1 rounded-full">

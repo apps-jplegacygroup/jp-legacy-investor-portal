@@ -5,7 +5,7 @@ import { Property } from '@/lib/types'
 export async function GET() {
   try {
     const properties = await query<Property>(
-      'SELECT * FROM properties WHERE is_active = true ORDER BY created_at DESC'
+      'SELECT * FROM properties WHERE is_active = true ORDER BY status ASC, created_at DESC'
     )
     return NextResponse.json(properties)
   } catch (error) {

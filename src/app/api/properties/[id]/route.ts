@@ -62,6 +62,29 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const adminKey = req.headers.get('x-admin-key')
+  if (adminKey !== process.env.ADMIN_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  try {
+    const { id } = await params
+    const { status } = await req.json()
+    if (status !== 'available' && status !== 'sold') {
+      return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
+    }
+    const [property] = await query<Property>(
+      'UPDATE properties SET status=$1 WHERE id=$2 RETURNING *',
+      [status, id]
+    )
+    if (!property) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    return NextResponse.json(property)
+  } catch (error) {
+    console.error('PATCH /api/properties/[id] error:', error)
+    return NextResponse.json({ error: 'Failed to update status' }, { status: 500 })
+  }
+}
+
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const adminKey = req.headers.get('x-admin-key')
   if (adminKey !== process.env.ADMIN_SECRET) {

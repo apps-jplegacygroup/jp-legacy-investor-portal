@@ -14,6 +14,185 @@ import {
 
 const FinancialCharts = dynamic(() => import('@/components/FinancialCharts'), { ssr: false })
 
+type Lang = 'es' | 'en'
+
+const T = {
+  es: {
+    loading: 'Cargando análisis...',
+    notFound: 'Propiedad no encontrada.',
+    exportPdf: 'Exportar PDF',
+    units: 'unidades',
+    bedUnit: 'hab/unidad',
+    bathUnit: 'baños/unidad',
+    built: 'Construido',
+    viewProperty: 'Ver Propiedad',
+    watchVideo: 'Ver Video',
+    scenario: 'Escenario:',
+    currentRent: 'Renta Actual',
+    improvedRent: '✦ Renta Mejorada',
+    renovCost: 'Costo est. renovación:',
+    verifyContractor: '*verificar con contratista',
+    calcTitle: 'Calculadora: Ajusta los parámetros',
+    modifiedValues: 'Valores modificados',
+    purchasePrice: 'Precio de Compra',
+    downPaymentPct: 'Down Payment %',
+    interestRate: 'Tasa de Interés %',
+    monthlyRentY1: 'Renta Mensual Año 1',
+    rentIncrease: 'Incremento de Renta %',
+    vacancy: 'Vacancia %',
+    restoreValues: 'Restaurar valores originales',
+    investmentSummary: 'Resumen de Inversión',
+    downPayment: 'Down Payment',
+    monthlyPaymentLabel: 'Pago Mensual (Hipoteca)',
+    cashFlowY1: 'Cash Flow Mensual (Yr 1)',
+    afterTax: 'After tax',
+    paybackPeriod: 'Período de Retorno',
+    paybackSub: 'Payback period',
+    years: 'años',
+    returnMetrics: 'Métricas de Retorno',
+    year: 'Año',
+    assetReturn: 'Retorno del activo',
+    beforeTax: 'Antes de impuestos',
+    afterTaxSub: 'Después de impuestos',
+    inclAmort: 'Incluyendo amortización',
+    perUnitMonth: 'Por unidad / mes',
+    accumulatedEquity: 'Equity Acumulado',
+    ofValue: 'del valor',
+    projection5yr: 'Proyección a 5 Años',
+    metric: 'Métrica',
+    monthlyRent: 'Renta Mensual',
+    yearlyRent: 'Renta Anual Total',
+    grossOperating: 'Ingreso Bruto Operativo',
+    operatingExpenses: 'Gastos Operativos',
+    noi: 'NOI (Ingreso Neto Operativo)',
+    capRate: 'Cap Rate',
+    cfMonthlyBT: 'Cash Flow Mensual (BT)',
+    cfMonthlyAT: 'Cash Flow Mensual (AT)',
+    cocBT: 'Cash on Cash (BT)',
+    cocAT: 'Cash on Cash (AT)',
+    roiBT: 'ROI Total (BT)',
+    roiAT: 'ROI Total (AT)',
+    annualAmort: 'Amortización Anual',
+    equityAccum: 'Equity Acumulado',
+    equityPct: 'Equity %',
+    graphicProjection: 'Proyección Gráfica a 5 Años',
+    expenseBreakdown: 'Desglose de Gastos (Año 1)',
+    grossOperatingIncome: 'Ingreso Bruto Operativo',
+    noiYear1: 'NOI (Año 1)',
+    expenseRatio: 'Ratio de gastos',
+    ofGOI: 'del IGO',
+    loanDetails: 'Detalles del Préstamo',
+    loanAmount: 'Monto del Préstamo',
+    annualInterestRate: 'Tasa de Interés Anual',
+    loanTerm: 'Plazo del Préstamo',
+    monthlyPayment: 'Pago Mensual',
+    totalPayments: 'Total de Pagos',
+    totalInterestCost: 'Costo Total de Intereses',
+    initialEquity: 'Equity Inicial Invertido',
+    disclaimerTitle: '⚠ Aviso Legal — Proyecciones Estimadas',
+    disclaimerBody1: `Todos los escenarios presentados en este análisis — incluyendo cash flow, retorno sobre la inversión (ROI), cap rate, cash on cash return y proyecciones a 5 años — son estimaciones basadas en condiciones actuales del mercado y los datos ingresados. Los resultados reales pueden variar significativamente dependiendo de múltiples factores, incluyendo pero no limitados a: tasas de interés ofrecidas por el lender al momento del cierre, condiciones del mercado inmobiliario, niveles reales de vacancia, costos de mantenimiento y reparaciones inesperadas, cambios en impuestos a la propiedad, variaciones en el mercado de rentas, costos de administración, y factores macroeconómicos.`,
+    disclaimerBody2: `Los costos de renovación son estimados y deben ser verificados con un contratista licenciado antes de tomar decisiones de inversión. Este análisis no constituye asesoramiento financiero, legal ni fiscal. Se recomienda consultar con un asesor financiero certificado, contador (CPA) y/o abogado especializado en bienes raíces antes de realizar cualquier inversión.`,
+    disclaimerBody3: 'JP Legacy Group es un equipo de bienes raíces operando bajo eXp Realty, LLC — Licencia # CQ1062304, Estado de Florida.',
+    showAmort: 'Ver tabla de amortización (primeros 24 meses)',
+    hideAmort: 'Ocultar tabla de amortización (primeros 24 meses)',
+    amortHeaders: ['#', 'Fecha', 'Pago', 'Interés', 'Principal', 'Balance'],
+    insurance: 'Seguro',
+    maintenance: 'Mantenimiento',
+    propMgmt: 'Adm. Propiedad',
+    utilities: 'Servicios',
+    propTax: 'Impuesto Propiedad',
+    hoa: 'HOA',
+    footerSub: 'Powered by eXp Realty · Florida',
+  },
+  en: {
+    loading: 'Loading analysis...',
+    notFound: 'Property not found.',
+    exportPdf: 'Export PDF',
+    units: 'units',
+    bedUnit: 'bed/unit',
+    bathUnit: 'bath/unit',
+    built: 'Built',
+    viewProperty: 'View Property',
+    watchVideo: 'Watch Video',
+    scenario: 'Scenario:',
+    currentRent: 'Current Rent',
+    improvedRent: '✦ Improved Rent',
+    renovCost: 'Est. renovation cost:',
+    verifyContractor: '*verify with contractor',
+    calcTitle: 'Calculator: Adjust Parameters',
+    modifiedValues: 'Modified values',
+    purchasePrice: 'Purchase Price',
+    downPaymentPct: 'Down Payment %',
+    interestRate: 'Interest Rate %',
+    monthlyRentY1: 'Monthly Rent Year 1',
+    rentIncrease: 'Rent Increase %',
+    vacancy: 'Vacancy %',
+    restoreValues: 'Restore original values',
+    investmentSummary: 'Investment Summary',
+    downPayment: 'Down Payment',
+    monthlyPaymentLabel: 'Monthly Payment (Mortgage)',
+    cashFlowY1: 'Monthly Cash Flow (Yr 1)',
+    afterTax: 'After tax',
+    paybackPeriod: 'Payback Period',
+    paybackSub: 'Payback period',
+    years: 'years',
+    returnMetrics: 'Return Metrics',
+    year: 'Year',
+    assetReturn: 'Asset return',
+    beforeTax: 'Before taxes',
+    afterTaxSub: 'After taxes',
+    inclAmort: 'Including amortization',
+    perUnitMonth: 'Per unit / month',
+    accumulatedEquity: 'Accumulated Equity',
+    ofValue: 'of value',
+    projection5yr: '5-Year Projection',
+    metric: 'Metric',
+    monthlyRent: 'Monthly Rent',
+    yearlyRent: 'Annual Total Rent',
+    grossOperating: 'Gross Operating Income',
+    operatingExpenses: 'Operating Expenses',
+    noi: 'NOI (Net Operating Income)',
+    capRate: 'Cap Rate',
+    cfMonthlyBT: 'Monthly Cash Flow (BT)',
+    cfMonthlyAT: 'Monthly Cash Flow (AT)',
+    cocBT: 'Cash on Cash (BT)',
+    cocAT: 'Cash on Cash (AT)',
+    roiBT: 'Total ROI (BT)',
+    roiAT: 'Total ROI (AT)',
+    annualAmort: 'Annual Amortization',
+    equityAccum: 'Accumulated Equity',
+    equityPct: 'Equity %',
+    graphicProjection: '5-Year Graphical Projection',
+    expenseBreakdown: 'Expense Breakdown (Year 1)',
+    grossOperatingIncome: 'Gross Operating Income',
+    noiYear1: 'NOI (Year 1)',
+    expenseRatio: 'Expense ratio',
+    ofGOI: 'of GOI',
+    loanDetails: 'Loan Details',
+    loanAmount: 'Loan Amount',
+    annualInterestRate: 'Annual Interest Rate',
+    loanTerm: 'Loan Term',
+    monthlyPayment: 'Monthly Payment',
+    totalPayments: 'Total Payments',
+    totalInterestCost: 'Total Interest Cost',
+    initialEquity: 'Initial Equity Invested',
+    disclaimerTitle: '⚠ Legal Notice — Estimated Projections',
+    disclaimerBody1: `All scenarios presented in this analysis — including cash flow, return on investment (ROI), cap rate, cash on cash return, and 5-year projections — are estimates based on current market conditions and the data provided. Actual results may vary significantly depending on multiple factors, including but not limited to: interest rates offered by the lender at closing, real estate market conditions, actual vacancy rates, maintenance costs and unexpected repairs, changes in property taxes, rental market fluctuations, management costs, and macroeconomic factors.`,
+    disclaimerBody2: `Renovation costs are estimates and must be verified with a licensed contractor before making investment decisions. This analysis does not constitute financial, legal, or tax advice. It is recommended to consult with a certified financial advisor, CPA, and/or real estate attorney before making any investment.`,
+    disclaimerBody3: 'JP Legacy Group is a real estate team operating under eXp Realty, LLC — License # CQ1062304, State of Florida.',
+    showAmort: 'Show amortization table (first 24 months)',
+    hideAmort: 'Hide amortization table (first 24 months)',
+    amortHeaders: ['#', 'Date', 'Payment', 'Interest', 'Principal', 'Balance'],
+    insurance: 'Insurance',
+    maintenance: 'Maintenance',
+    propMgmt: 'Property Mgmt',
+    utilities: 'Utilities',
+    propTax: 'Property Tax',
+    hoa: 'HOA',
+    footerSub: 'Powered by eXp Realty · Florida',
+  },
+}
+
 function StatCard({ label, value, sub, highlight, color }: {
   label: string; value: string; sub?: string; highlight?: boolean
   color?: 'green' | 'gold' | 'navy' | 'default'
@@ -81,6 +260,9 @@ export default function PropertyPage() {
   const [activeYear, setActiveYear] = useState(1)
   const [calcInputs, setCalcInputs] = useState<CalcFields | null>(null)
   const [scenario, setScenario] = useState<'actual' | 'mejorado'>('actual')
+  const [lang, setLang] = useState<Lang>('es')
+
+  const t = T[lang]
 
   useEffect(() => {
     if (!id) return
@@ -133,16 +315,14 @@ export default function PropertyPage() {
     setCalcInputs(prev => ({ ...(prev ?? defaults!), [field]: v }))
   }
 
-  const resetCalc = () => {
-    setCalcInputs(null)
-  }
+  const resetCalc = () => { setCalcInputs(null) }
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a1628]">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-[#C9A840] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-white font-medium">Cargando análisis...</p>
+          <p className="text-white font-medium">{t.loading}</p>
         </div>
       </div>
     )
@@ -151,7 +331,7 @@ export default function PropertyPage() {
   if (!property || !financials || !inputs) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Propiedad no encontrada.</p>
+        <p className="text-gray-500">{t.notFound}</p>
       </div>
     )
   }
@@ -159,13 +339,43 @@ export default function PropertyPage() {
   const yr = financials.projections[activeYear - 1]
 
   const expenseBreakdown = [
-    { label: 'Seguro', value: Number(property.insurance) },
-    { label: 'Mantenimiento', value: yr.yearlyRent * Number(property.maintenance_percent) / 100 },
-    { label: 'Adm. Propiedad', value: yr.yearlyRent * Number(property.property_mgmt_percent) / 100 },
-    { label: 'Servicios', value: yr.yearlyRent * Number(property.utilities_percent) / 100 },
-    { label: 'Impuesto Propiedad', value: Number(property.property_tax) },
-    { label: 'HOA', value: Number(property.hoa) },
+    { label: t.insurance, value: Number(property.insurance) },
+    { label: t.maintenance, value: yr.yearlyRent * Number(property.maintenance_percent) / 100 },
+    { label: t.propMgmt, value: yr.yearlyRent * Number(property.property_mgmt_percent) / 100 },
+    { label: t.utilities, value: yr.yearlyRent * Number(property.utilities_percent) / 100 },
+    { label: t.propTax, value: Number(property.property_tax) },
+    { label: t.hoa, value: Number(property.hoa) },
   ].filter(e => e.value > 0)
+
+  const projectionRows = [
+    { label: t.monthlyRent, fn: (p: typeof yr) => fmtCurrency(p.monthlyRent), section: 'income' },
+    { label: t.yearlyRent, fn: (p: typeof yr) => fmtCurrency(p.yearlyRent), section: 'income' },
+    { label: t.grossOperating, fn: (p: typeof yr) => fmtCurrency(p.grossOperatingIncome), section: 'income' },
+    { label: t.operatingExpenses, fn: (p: typeof yr) => fmtCurrency(p.totalOperatingExpenses), section: 'expense' },
+    { label: t.noi, fn: (p: typeof yr) => fmtCurrency(p.netOperatingIncome), section: 'noi' },
+    { label: t.capRate, fn: (p: typeof yr) => fmtPercent(p.capRate), section: 'rate' },
+    { label: t.cfMonthlyBT, fn: (p: typeof yr) => fmtCurrency(p.btCashFlowMonthly), section: 'cf' },
+    { label: t.cfMonthlyAT, fn: (p: typeof yr) => fmtCurrency(p.atCashFlowMonthly), section: 'cf' },
+    { label: t.cocBT, fn: (p: typeof yr) => fmtPercent(p.cashOnCashBT), section: 'rate' },
+    { label: t.cocAT, fn: (p: typeof yr) => fmtPercent(p.atCoCROE), section: 'rate' },
+    { label: t.roiBT, fn: (p: typeof yr) => fmtPercent(p.btROI), section: 'roi' },
+    { label: t.roiAT, fn: (p: typeof yr) => fmtPercent(p.atROI), section: 'roi' },
+    { label: t.annualAmort, fn: (p: typeof yr) => fmtCurrency(p.principalPaydown), section: 'equity' },
+    { label: t.equityAccum, fn: (p: typeof yr) => fmtCurrency(p.equityDollars), section: 'equity' },
+    { label: t.equityPct, fn: (p: typeof yr) => fmtPercent(p.equityPercent), section: 'equity' },
+  ]
+
+  const loanDetailRows = [
+    { label: t.purchasePrice, value: fmtCurrency(Number(inputs.purchase_price)) },
+    { label: t.downPayment, value: `${fmtCurrency(financials.equityAmount)} (${inputs.equity_percent}%)` },
+    { label: t.loanAmount, value: fmtCurrency(financials.loanAmount) },
+    { label: t.annualInterestRate, value: `${inputs.annual_interest_rate}%` },
+    { label: t.loanTerm, value: `${property.loan_term_years} ${t.years}` },
+    { label: t.monthlyPayment, value: fmtCurrency(financials.monthlyPayment) },
+    { label: t.totalPayments, value: fmtCurrency(financials.sumOfPayments) },
+    { label: t.totalInterestCost, value: fmtCurrency(financials.interestCost) },
+    { label: t.initialEquity, value: fmtCurrency(Number(property.total_equity_invested)) },
+  ]
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -182,11 +392,26 @@ export default function PropertyPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {/* Language Toggle */}
+            <div className="flex items-center border border-white/20 rounded-lg overflow-hidden text-xs font-bold">
+              <button
+                onClick={() => setLang('es')}
+                className={`px-3 py-1.5 transition-colors ${lang === 'es' ? 'bg-[#C9A840] text-[#0a1628]' : 'text-gray-400 hover:text-white'}`}
+              >
+                ES
+              </button>
+              <button
+                onClick={() => setLang('en')}
+                className={`px-3 py-1.5 transition-colors ${lang === 'en' ? 'bg-[#C9A840] text-[#0a1628]' : 'text-gray-400 hover:text-white'}`}
+              >
+                EN
+              </button>
+            </div>
             <button
               onClick={() => window.print()}
               className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-[#C9A840] transition-colors"
             >
-              <Printer className="w-4 h-4" /> Exportar PDF
+              <Printer className="w-4 h-4" /> {t.exportPdf}
             </button>
             <a href="https://www.jplegacygroup.com" target="_blank" rel="noopener noreferrer"
               className="text-xs text-gray-400 hover:text-[#C9A840] flex items-center gap-1 transition-colors">
@@ -211,7 +436,7 @@ export default function PropertyPage() {
                 <span className="text-xs bg-[#C9A840] text-[#0a1628] font-bold px-2 py-1 rounded-md uppercase tracking-wider">
                   {property.property_type}
                 </span>
-                <span className="text-xs text-gray-400">{property.num_units} unidades</span>
+                <span className="text-xs text-gray-400">{property.num_units} {t.units}</span>
               </div>
               <h1 className="text-2xl md:text-3xl font-bold mb-1">{property.address}</h1>
               <div className="flex items-center gap-1 text-gray-300 mb-4">
@@ -219,10 +444,10 @@ export default function PropertyPage() {
                 <span>{property.city}, {property.state} {property.zip}</span>
               </div>
               <div className="flex flex-wrap gap-4 text-sm text-gray-300">
-                <span className="flex items-center gap-1"><BedDouble className="w-4 h-4 text-[#C9A840]" /> {property.beds_per_unit} hab/unidad</span>
-                <span className="flex items-center gap-1"><Bath className="w-4 h-4 text-[#C9A840]" /> {property.baths_per_unit} baños/unidad</span>
+                <span className="flex items-center gap-1"><BedDouble className="w-4 h-4 text-[#C9A840]" /> {property.beds_per_unit} {t.bedUnit}</span>
+                <span className="flex items-center gap-1"><Bath className="w-4 h-4 text-[#C9A840]" /> {property.baths_per_unit} {t.bathUnit}</span>
                 {property.sqft && <span className="flex items-center gap-1"><Home className="w-4 h-4 text-[#C9A840]" /> {property.sqft.toLocaleString()} sqft</span>}
-                {property.year_built && <span className="flex items-center gap-1"><Calendar className="w-4 h-4 text-[#C9A840]" /> Construido {property.year_built}</span>}
+                {property.year_built && <span className="flex items-center gap-1"><Calendar className="w-4 h-4 text-[#C9A840]" /> {t.built} {property.year_built}</span>}
               </div>
               {property.description && (
                 <p className="mt-3 text-sm text-gray-400 leading-relaxed">{property.description}</p>
@@ -231,13 +456,13 @@ export default function PropertyPage() {
                 {property.ylopo_link && (
                   <a href={property.ylopo_link} target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 bg-[#C9A840] hover:bg-[#e0c060] text-[#0a1628] font-bold text-sm px-4 py-2 rounded-lg transition-colors">
-                    Ver Propiedad <ExternalLink className="w-4 h-4" />
+                    {t.viewProperty} <ExternalLink className="w-4 h-4" />
                   </a>
                 )}
                 {property.video_url && (
                   <a href={property.video_url} target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-bold text-sm px-4 py-2 rounded-lg transition-colors border border-white/20">
-                    <Play className="w-4 h-4 text-[#C9A840]" /> Ver Video
+                    <Play className="w-4 h-4 text-[#C9A840]" /> {t.watchVideo}
                   </a>
                 )}
               </div>
@@ -250,15 +475,15 @@ export default function PropertyPage() {
       {hasImprovedScenario && (
         <div className="bg-white border-b border-gray-200 no-print">
           <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3 flex-wrap">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Escenario:</span>
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t.scenario}</span>
             <div className="flex rounded-lg border border-gray-200 overflow-hidden">
               <button onClick={() => { setScenario('actual'); setCalcInputs(null) }}
                 className={`px-4 py-2 text-sm font-semibold transition-colors ${scenario === 'actual' ? 'bg-[#0a1628] text-[#C9A840]' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
-                Renta Actual
+                {t.currentRent}
               </button>
               <button onClick={() => { setScenario('mejorado'); setCalcInputs(null) }}
                 className={`px-4 py-2 text-sm font-semibold transition-colors ${scenario === 'mejorado' ? 'bg-amber-500 text-white' : 'bg-white text-gray-600 hover:bg-amber-50'}`}>
-                ✦ Renta Mejorada
+                {t.improvedRent}
               </button>
             </div>
             {scenario === 'mejorado' && property?.renovation_notes && (
@@ -268,8 +493,8 @@ export default function PropertyPage() {
             )}
             {scenario === 'mejorado' && property?.renovation_cost && Number(property.renovation_cost) > 0 && (
               <span className="text-xs text-gray-500">
-                Costo est. renovación: <strong className="text-amber-700">{fmtCurrency(Number(property.renovation_cost))}</strong>
-                <span className="ml-1 text-gray-400">*verificar con contratista</span>
+                {t.renovCost} <strong className="text-amber-700">{fmtCurrency(Number(property.renovation_cost))}</strong>
+                <span className="ml-1 text-gray-400">{t.verifyContractor}</span>
               </span>
             )}
           </div>
@@ -292,8 +517,8 @@ export default function PropertyPage() {
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="w-4 h-4" />
               <span className="font-semibold text-sm">
-                Calculadora: Ajusta los parámetros
-                {isDirty && <span className="ml-2 text-xs bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full font-semibold">Valores modificados</span>}
+                {t.calcTitle}
+                {isDirty && <span className="ml-2 text-xs bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full font-semibold">{t.modifiedValues}</span>}
               </span>
             </div>
             {showCalc ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -302,17 +527,17 @@ export default function PropertyPage() {
           {showCalc && (
             <div className="mt-3 bg-[#152238] rounded-xl p-5 border border-white/10">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                <CalcInput label="Precio de Compra" value={inputs.purchase_price} onChange={updateInput('purchase_price')} prefix="$" min="0" />
-                <CalcInput label="Down Payment %" value={inputs.equity_percent} onChange={updateInput('equity_percent')} suffix="%" min="0" max="100" step="0.5" />
-                <CalcInput label="Tasa de Interés %" value={inputs.annual_interest_rate} onChange={updateInput('annual_interest_rate')} suffix="%" min="0" max="30" step="0.1" />
-                <CalcInput label="Renta Mensual Año 1" value={inputs.monthly_rent_year1} onChange={updateInput('monthly_rent_year1')} prefix="$" min="0" />
-                <CalcInput label="Incremento de Renta %" value={inputs.rent_increase_percent} onChange={updateInput('rent_increase_percent')} suffix="%" min="0" max="20" step="0.5" />
-                <CalcInput label="Vacancia %" value={inputs.vacancy_rate} onChange={updateInput('vacancy_rate')} suffix="%" min="0" max="50" step="0.5" />
+                <CalcInput label={t.purchasePrice} value={inputs.purchase_price} onChange={updateInput('purchase_price')} prefix="$" min="0" />
+                <CalcInput label={t.downPaymentPct} value={inputs.equity_percent} onChange={updateInput('equity_percent')} suffix="%" min="0" max="100" step="0.5" />
+                <CalcInput label={t.interestRate} value={inputs.annual_interest_rate} onChange={updateInput('annual_interest_rate')} suffix="%" min="0" max="30" step="0.1" />
+                <CalcInput label={t.monthlyRentY1} value={inputs.monthly_rent_year1} onChange={updateInput('monthly_rent_year1')} prefix="$" min="0" />
+                <CalcInput label={t.rentIncrease} value={inputs.rent_increase_percent} onChange={updateInput('rent_increase_percent')} suffix="%" min="0" max="20" step="0.5" />
+                <CalcInput label={t.vacancy} value={inputs.vacancy_rate} onChange={updateInput('vacancy_rate')} suffix="%" min="0" max="50" step="0.5" />
               </div>
               {isDirty && (
                 <button onClick={resetCalc}
                   className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors border border-white/20 rounded-lg px-3 py-1.5">
-                  <RotateCcw className="w-3 h-3" /> Restaurar valores originales
+                  <RotateCcw className="w-3 h-3" /> {t.restoreValues}
                 </button>
               )}
             </div>
@@ -321,16 +546,16 @@ export default function PropertyPage() {
 
         {/* Key Investment Numbers */}
         <section>
-          <SectionTitle icon={DollarSign} title="Resumen de Inversión" />
+          <SectionTitle icon={DollarSign} title={t.investmentSummary} />
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            <StatCard label="Precio de Compra" value={fmtCurrency(Number(inputs.purchase_price))} color="navy" />
-            <StatCard label="Down Payment" value={fmtCurrency(financials.equityAmount)}
+            <StatCard label={t.purchasePrice} value={fmtCurrency(Number(inputs.purchase_price))} color="navy" />
+            <StatCard label={t.downPayment} value={fmtCurrency(financials.equityAmount)}
               sub={`${inputs.equity_percent}% del precio`} highlight color="gold" />
-            <StatCard label="Pago Mensual (Hipoteca)" value={fmtCurrency(financials.monthlyPayment)}
-              sub={`${inputs.annual_interest_rate}% · ${property.loan_term_years} años`} />
-            <StatCard label="Cash Flow Mensual (Yr 1)" value={fmtCurrency(financials.projections[0].atCashFlowMonthly)}
-              sub="After tax" color="green" />
-            <StatCard label="Período de Retorno" value={`${financials.paybackPeriod.toFixed(1)} años`} sub="Payback period" />
+            <StatCard label={t.monthlyPaymentLabel} value={fmtCurrency(financials.monthlyPayment)}
+              sub={`${inputs.annual_interest_rate}% · ${property.loan_term_years} ${t.years}`} />
+            <StatCard label={t.cashFlowY1} value={fmtCurrency(financials.projections[0].atCashFlowMonthly)}
+              sub={t.afterTax} color="green" />
+            <StatCard label={t.paybackPeriod} value={`${financials.paybackPeriod.toFixed(1)} ${t.years}`} sub={t.paybackSub} />
           </div>
         </section>
 
@@ -341,7 +566,7 @@ export default function PropertyPage() {
               <div className="w-8 h-8 rounded-lg bg-[#0a1628] flex items-center justify-center">
                 <TrendingUp className="w-4 h-4 text-[#C9A840]" />
               </div>
-              <h2 className="text-lg font-bold text-[#0a1628]">Métricas de Retorno</h2>
+              <h2 className="text-lg font-bold text-[#0a1628]">{t.returnMetrics}</h2>
             </div>
             <div className="flex gap-1 bg-white rounded-lg border border-gray-200 p-1">
               {[1, 2, 3, 4, 5].map(y => (
@@ -349,59 +574,43 @@ export default function PropertyPage() {
                   className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${
                     activeYear === y ? 'bg-[#0a1628] text-[#C9A840]' : 'text-gray-500 hover:text-[#0a1628]'
                   }`}>
-                  Año {y}
+                  {t.year} {y}
                 </button>
               ))}
             </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard label="Cap Rate" value={fmtPercent(yr.capRate)} sub="Retorno del activo" color="green" />
-            <StatCard label="Cash on Cash (BT)" value={fmtPercent(yr.cashOnCashBT)} sub="Antes de impuestos" color="green" />
-            <StatCard label="Cash on Cash (AT)" value={fmtPercent(yr.atCoCROE)} sub="Después de impuestos" color="green" />
-            <StatCard label="ROI Total (BT)" value={fmtPercent(yr.btROI)} sub="Incluyendo amortización" color="gold" />
+            <StatCard label="Cap Rate" value={fmtPercent(yr.capRate)} sub={t.assetReturn} color="green" />
+            <StatCard label="Cash on Cash (BT)" value={fmtPercent(yr.cashOnCashBT)} sub={t.beforeTax} color="green" />
+            <StatCard label="Cash on Cash (AT)" value={fmtPercent(yr.atCoCROE)} sub={t.afterTaxSub} color="green" />
+            <StatCard label="ROI Total (BT)" value={fmtPercent(yr.btROI)} sub={t.inclAmort} color="gold" />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-            <StatCard label="Cash Flow Mensual (BT)" value={fmtCurrency(yr.btCashFlowMonthly)} sub="Antes de impuestos" />
-            <StatCard label="Cash Flow Mensual (AT)" value={fmtCurrency(yr.atCashFlowMonthly)} sub="Después de impuestos" />
-            <StatCard label="Cash Flow / Unidad" value={fmtCurrency(yr.atCashFlowPerUnit)} sub="Por unidad / mes" />
-            <StatCard label="Equity Acumulado" value={fmtCurrency(yr.equityDollars)}
-              sub={`${fmtPercent(yr.equityPercent)} del valor`} color="gold" />
+            <StatCard label={`${t.cfMonthlyBT.replace('Monthly ', '')}`} value={fmtCurrency(yr.btCashFlowMonthly)} sub={t.beforeTax} />
+            <StatCard label={`${t.cfMonthlyAT.replace('Monthly ', '')}`} value={fmtCurrency(yr.atCashFlowMonthly)} sub={t.afterTaxSub} />
+            <StatCard label={lang === 'en' ? 'Cash Flow / Unit' : 'Cash Flow / Unidad'} value={fmtCurrency(yr.atCashFlowPerUnit)} sub={t.perUnitMonth} />
+            <StatCard label={t.accumulatedEquity} value={fmtCurrency(yr.equityDollars)}
+              sub={`${fmtPercent(yr.equityPercent)} ${t.ofValue}`} color="gold" />
           </div>
         </section>
 
         {/* 5-Year Projection Table */}
         <section>
-          <SectionTitle icon={BarChart3} title="Proyección a 5 Años" />
+          <SectionTitle icon={BarChart3} title={t.projection5yr} />
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-[#0a1628] text-white">
-                    <th className="text-left px-4 py-3 font-semibold text-xs uppercase tracking-wider text-gray-300">Métrica</th>
+                    <th className="text-left px-4 py-3 font-semibold text-xs uppercase tracking-wider text-gray-300">{t.metric}</th>
                     {[1, 2, 3, 4, 5].map(y => (
-                      <th key={y} className="text-right px-4 py-3 font-semibold text-xs uppercase tracking-wider text-[#C9A840]">Año {y}</th>
+                      <th key={y} className="text-right px-4 py-3 font-semibold text-xs uppercase tracking-wider text-[#C9A840]">{t.year} {y}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {[
-                    { label: 'Renta Mensual', fn: (p: typeof yr) => fmtCurrency(p.monthlyRent), section: 'income' },
-                    { label: 'Renta Anual Total', fn: (p: typeof yr) => fmtCurrency(p.yearlyRent), section: 'income' },
-                    { label: 'Ingreso Bruto Operativo', fn: (p: typeof yr) => fmtCurrency(p.grossOperatingIncome), section: 'income' },
-                    { label: 'Gastos Operativos', fn: (p: typeof yr) => fmtCurrency(p.totalOperatingExpenses), section: 'expense' },
-                    { label: 'NOI (Ingreso Neto Operativo)', fn: (p: typeof yr) => fmtCurrency(p.netOperatingIncome), section: 'noi' },
-                    { label: 'Cap Rate', fn: (p: typeof yr) => fmtPercent(p.capRate), section: 'rate' },
-                    { label: 'Cash Flow Mensual (BT)', fn: (p: typeof yr) => fmtCurrency(p.btCashFlowMonthly), section: 'cf' },
-                    { label: 'Cash Flow Mensual (AT)', fn: (p: typeof yr) => fmtCurrency(p.atCashFlowMonthly), section: 'cf' },
-                    { label: 'Cash on Cash (BT)', fn: (p: typeof yr) => fmtPercent(p.cashOnCashBT), section: 'rate' },
-                    { label: 'Cash on Cash (AT)', fn: (p: typeof yr) => fmtPercent(p.atCoCROE), section: 'rate' },
-                    { label: 'ROI Total (BT)', fn: (p: typeof yr) => fmtPercent(p.btROI), section: 'roi' },
-                    { label: 'ROI Total (AT)', fn: (p: typeof yr) => fmtPercent(p.atROI), section: 'roi' },
-                    { label: 'Amortización Anual', fn: (p: typeof yr) => fmtCurrency(p.principalPaydown), section: 'equity' },
-                    { label: 'Equity Acumulado', fn: (p: typeof yr) => fmtCurrency(p.equityDollars), section: 'equity' },
-                    { label: 'Equity %', fn: (p: typeof yr) => fmtPercent(p.equityPercent), section: 'equity' },
-                  ].map((row, i) => {
+                  {projectionRows.map((row, i) => {
                     const sectionColors: Record<string, string> = {
                       income: 'text-gray-800', expense: 'text-red-700', noi: 'text-green-700 font-semibold',
                       rate: 'text-blue-700 font-semibold', cf: 'text-green-700 font-semibold',
@@ -433,7 +642,7 @@ export default function PropertyPage() {
             <div className="w-8 h-8 rounded-lg bg-[#0a1628] flex items-center justify-center">
               <LineChart className="w-4 h-4 text-[#C9A840]" />
             </div>
-            <h2 className="text-lg font-bold">Proyección Gráfica a 5 Años</h2>
+            <h2 className="text-lg font-bold">{t.graphicProjection}</h2>
             {showCharts ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
           </button>
           {showCharts && <FinancialCharts projections={financials.projections} />}
@@ -442,10 +651,10 @@ export default function PropertyPage() {
         {/* Income vs Expenses + Loan Details */}
         <div className="grid md:grid-cols-2 gap-6">
           <section>
-            <SectionTitle icon={Percent} title="Desglose de Gastos (Año 1)" />
+            <SectionTitle icon={Percent} title={t.expenseBreakdown} />
             <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
               <div className="flex justify-between items-center mb-3 pb-3 border-b border-gray-100">
-                <span className="text-sm font-semibold text-gray-700">Ingreso Bruto Operativo</span>
+                <span className="text-sm font-semibold text-gray-700">{t.grossOperatingIncome}</span>
                 <span className="font-bold text-green-700">{fmtCurrency(financials.projections[0].grossOperatingIncome)}</span>
               </div>
               <div className="space-y-2 mb-4">
@@ -465,30 +674,20 @@ export default function PropertyPage() {
                 })}
               </div>
               <div className="flex justify-between items-center pt-3 border-t border-gray-200">
-                <span className="text-sm font-bold text-gray-800">NOI (Año 1)</span>
+                <span className="text-sm font-bold text-gray-800">{t.noiYear1}</span>
                 <span className="font-bold text-green-700 text-lg">{fmtCurrency(financials.projections[0].netOperatingIncome)}</span>
               </div>
               <div className="flex justify-between items-center mt-1">
-                <span className="text-xs text-gray-500">Ratio de gastos</span>
-                <span className="text-xs font-semibold text-gray-700">{fmtPercent(financials.projections[0].expenseRatio)} del IGO</span>
+                <span className="text-xs text-gray-500">{t.expenseRatio}</span>
+                <span className="text-xs font-semibold text-gray-700">{fmtPercent(financials.projections[0].expenseRatio)} {t.ofGOI}</span>
               </div>
             </div>
           </section>
 
           <section>
-            <SectionTitle icon={CircleDollarSign} title="Detalles del Préstamo" />
+            <SectionTitle icon={CircleDollarSign} title={t.loanDetails} />
             <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm space-y-3">
-              {[
-                { label: 'Precio de Compra', value: fmtCurrency(Number(inputs.purchase_price)) },
-                { label: 'Down Payment', value: `${fmtCurrency(financials.equityAmount)} (${inputs.equity_percent}%)` },
-                { label: 'Monto del Préstamo', value: fmtCurrency(financials.loanAmount) },
-                { label: 'Tasa de Interés Anual', value: `${inputs.annual_interest_rate}%` },
-                { label: 'Plazo del Préstamo', value: `${property.loan_term_years} años` },
-                { label: 'Pago Mensual', value: fmtCurrency(financials.monthlyPayment) },
-                { label: 'Total de Pagos', value: fmtCurrency(financials.sumOfPayments) },
-                { label: 'Costo Total de Intereses', value: fmtCurrency(financials.interestCost) },
-                { label: 'Equity Inicial Invertido', value: fmtCurrency(Number(property.total_equity_invested)) },
-              ].map((item, i) => (
+              {loanDetailRows.map((item, i) => (
                 <div key={i} className="flex justify-between items-center py-1.5 border-b border-gray-50 last:border-0">
                   <span className="text-sm text-gray-600">{item.label}</span>
                   <span className="text-sm font-semibold text-[#0a1628]">{item.value}</span>
@@ -500,24 +699,10 @@ export default function PropertyPage() {
 
         {/* Disclaimer */}
         <section className="bg-gray-50 border border-gray-200 rounded-xl p-5 text-xs text-gray-500 leading-relaxed">
-          <p className="font-bold text-gray-700 mb-2 uppercase tracking-wide text-xs">⚠ Aviso Legal — Proyecciones Estimadas</p>
-          <p>
-            Todos los escenarios presentados en este análisis — incluyendo cash flow, retorno sobre la inversión (ROI), cap rate,
-            cash on cash return y proyecciones a 5 años — son <strong className="text-gray-600">estimaciones basadas en condiciones actuales del mercado</strong> y
-            los datos ingresados. Los resultados reales pueden variar significativamente dependiendo de múltiples factores, incluyendo
-            pero no limitados a: tasas de interés ofrecidas por el lender al momento del cierre, condiciones del mercado inmobiliario,
-            niveles reales de vacancia, costos de mantenimiento y reparaciones inesperadas, cambios en impuestos a la propiedad,
-            variaciones en el mercado de rentas, costos de administración, y factores macroeconómicos.
-          </p>
-          <p className="mt-2">
-            Los costos de renovación son estimados y deben ser verificados con un contratista licenciado antes de tomar decisiones de inversión.
-            Este análisis <strong className="text-gray-600">no constituye asesoramiento financiero, legal ni fiscal</strong>.
-            Se recomienda consultar con un asesor financiero certificado, contador (CPA) y/o abogado especializado en bienes raíces
-            antes de realizar cualquier inversión.
-          </p>
-          <p className="mt-2 text-gray-400">
-            JP Legacy Group es un equipo de bienes raíces operando bajo eXp Realty, LLC — Licencia # CQ1062304, Estado de Florida.
-          </p>
+          <p className="font-bold text-gray-700 mb-2 uppercase tracking-wide text-xs">{t.disclaimerTitle}</p>
+          <p>{t.disclaimerBody1}</p>
+          <p className="mt-2">{t.disclaimerBody2}</p>
+          <p className="mt-2 text-gray-400">{t.disclaimerBody3}</p>
         </section>
 
         {/* Amortization toggle */}
@@ -525,7 +710,7 @@ export default function PropertyPage() {
           <button onClick={() => setShowAmort(!showAmort)}
             className="flex items-center gap-2 text-sm font-semibold text-[#0a1628] hover:text-[#C9A840] transition-colors no-print">
             {showAmort ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            {showAmort ? 'Ocultar' : 'Ver'} tabla de amortización (primeros 24 meses)
+            {showAmort ? t.hideAmort : t.showAmort}
           </button>
           {showAmort && (
             <div className="mt-3 bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
@@ -533,7 +718,7 @@ export default function PropertyPage() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="bg-[#0a1628] text-white">
-                      {['#', 'Fecha', 'Pago', 'Interés', 'Principal', 'Balance'].map(h => (
+                      {t.amortHeaders.map(h => (
                         <th key={h} className="px-3 py-2 text-right first:text-left font-semibold text-gray-300 uppercase tracking-wider">{h}</th>
                       ))}
                     </tr>
@@ -542,7 +727,8 @@ export default function PropertyPage() {
                     {Array.from({ length: 24 }, (_, i) => {
                       const startDate = new Date(2026, 0, 1)
                       startDate.setMonth(startDate.getMonth() + i)
-                      const label = startDate.toLocaleDateString('es-US', { month: 'short', year: '2-digit' })
+                      const locale = lang === 'en' ? 'en-US' : 'es-US'
+                      const label = startDate.toLocaleDateString(locale, { month: 'short', year: '2-digit' })
                       const r = financials.loanAmount * (Number(inputs.annual_interest_rate) / 100 / 12)
                       const pmt = financials.monthlyPayment
                       let bal = financials.loanAmount
@@ -581,7 +767,7 @@ export default function PropertyPage() {
             </div>
             <div>
               <p className="text-sm font-bold text-[#C9A840]">JP Legacy Group</p>
-              <p className="text-xs text-gray-400">Powered by eXp Realty · Florida</p>
+              <p className="text-xs text-gray-400">{t.footerSub}</p>
             </div>
           </div>
           <p className="text-xs text-gray-500 text-center">

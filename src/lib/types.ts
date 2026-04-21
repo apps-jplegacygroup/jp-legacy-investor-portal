@@ -41,6 +41,7 @@ export interface Property {
   renovation_cost: number | null
   renovation_notes: string | null
 
+  status: 'available' | 'sold'
   is_active: boolean
   created_at: string
   updated_at: string
