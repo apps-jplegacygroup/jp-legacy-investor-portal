@@ -6,7 +6,7 @@ import { PropertyFormData } from '@/lib/types'
 
 const defaultValues: PropertyFormData = {
   address: '',
-  city: 'Tampa',
+  city: 'Tampa Metro',
   state: 'FL',
   zip: '',
   property_type: 'Multifamily',
@@ -141,7 +141,19 @@ export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
         <div className="sm:col-span-2">
           <Field label="Dirección" name="address" value={form.address} onChange={set('address')} required />
         </div>
-        <Field label="Ciudad" name="city" value={form.city} onChange={set('city')} required />
+        <div>
+          <label className="block text-xs font-semibold text-gray-700 mb-1">Ciudad <span className="text-red-500">*</span></label>
+          <select
+            value={form.city}
+            onChange={e => setForm(prev => ({ ...prev, city: e.target.value }))}
+            required
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#C9A840] focus:border-[#C9A840] bg-white"
+          >
+            <option value="Tampa Metro">Tampa Metro</option>
+            <option value="Orlando Metro">Orlando Metro</option>
+            <option value="Miami Metro">Miami Metro</option>
+          </select>
+        </div>
         <Field label="Estado" name="state" value={form.state} onChange={set('state')} required />
         <Field label="Zip Code" name="zip" value={form.zip} onChange={set('zip')} />
         <Field label="Tipo de Propiedad" name="property_type" value={form.property_type} onChange={set('property_type')} />
