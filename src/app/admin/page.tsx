@@ -99,10 +99,27 @@ export default function AdminPage() {
           body: fd,
         })
         const json = await res.json()
-        if (json.success) {
-          setImportResults(prev => prev.map(r => r.uid === uid ? { ...r, status: 'done', data: json.data } : r))
+        if (json.success && json.properties?.length > 0) {
+          const props: Partial<Property>[] = json.properties
+          if (props.length === 1) {
+            setImportResults(prev => prev.map(r => r.uid === uid ? { ...r, status: 'done', data: props[0] } : r))
+          } else {
+            // Multiple properties found — expand into separate results
+            const extras: ImportResult[] = props.slice(1).map((p, idx) => ({
+              uid: `${uid}-${idx + 1}`,
+              filename: `${file.name} (${idx + 2}/${props.length})`,
+              status: 'done' as const,
+              data: p,
+            }))
+            setImportResults(prev => {
+              const updated = prev.map(r => r.uid === uid
+                ? { ...r, status: 'done' as const, data: props[0], filename: `${file.name} (1/${props.length})` }
+                : r)
+              return [...updated, ...extras]
+            })
+          }
         } else {
-          setImportResults(prev => prev.map(r => r.uid === uid ? { ...r, status: 'error', error: json.error } : r))
+          setImportResults(prev => prev.map(r => r.uid === uid ? { ...r, status: 'error', error: json.error || 'No se encontraron propiedades' } : r))
         }
       } catch {
         setImportResults(prev => prev.map(r => r.uid === uid ? { ...r, status: 'error', error: 'Error de conexión' } : r))
