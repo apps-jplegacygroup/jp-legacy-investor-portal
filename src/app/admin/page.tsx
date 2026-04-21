@@ -6,11 +6,24 @@ import { Property } from '@/lib/types'
 import { Building2, Plus, Eye, Pencil, Trash2, Copy, ExternalLink, Upload, X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 
 interface ImportResult {
+  uid: string
   filename: string
   status: 'pending' | 'processing' | 'done' | 'error'
   data?: Partial<Property>
   error?: string
-  saved?: boolean
+  savedId?: string
+}
+
+const IMPORT_DEFAULTS = {
+  city: 'Miami Metro', state: 'FL', zip: '', property_type: 'Multifamily',
+  num_units: 4, beds_per_unit: 2, baths_per_unit: 1,
+  year_built: null, sqft: null, image_url: null, ylopo_link: null, video_url: null, description: null,
+  equity_percent: 25, annual_interest_rate: 7.0, loan_term_years: 30,
+  monthly_rent_year1: 0, rent_increase_percent: 3, vacancy_rate: 5,
+  insurance: 14000, maintenance_percent: 3, property_mgmt_percent: 10,
+  utilities_percent: 0, broker_fees: 0, hoa: 0, property_tax: 15000,
+  tax_rate: 28, depreciation_years: 27.5, points_percent: 0,
+  other_equity_spent: 0, total_equity_invested: 0,
 }
 
 export default function AdminPage() {
@@ -23,6 +36,7 @@ export default function AdminPage() {
   const [deleting, setDeleting] = useState<string | null>(null)
   const [importResults, setImportResults] = useState<ImportResult[]>([])
   const [showImport, setShowImport] = useState(false)
+  const [savingAll, setSavingAll] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const handleAuth = (e: React.FormEvent) => {
@@ -59,17 +73,20 @@ export default function AdminPage() {
   }
 
   const handleFilesSelected = async (files: FileList) => {
-    const newResults: ImportResult[] = Array.from(files).map(f => ({
-      filename: f.name, status: 'pending',
+    const fileArray = Array.from(files)
+    const newResults: ImportResult[] = fileArray.map(f => ({
+      uid: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      filename: f.name,
+      status: 'pending' as const,
     }))
     setImportResults(prev => [...prev, ...newResults])
     setShowImport(true)
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i]
-      const idx = importResults.length + i
+    for (let i = 0; i < fileArray.length; i++) {
+      const file = fileArray[i]
+      const uid = newResults[i].uid
 
-      setImportResults(prev => prev.map((r, j) => j === idx ? { ...r, status: 'processing' } : r))
+      setImportResults(prev => prev.map(r => r.uid === uid ? { ...r, status: 'processing' } : r))
 
       try {
         const fd = new FormData()
@@ -81,30 +98,18 @@ export default function AdminPage() {
         })
         const json = await res.json()
         if (json.success) {
-          setImportResults(prev => prev.map((r, j) => j === idx ? { ...r, status: 'done', data: json.data } : r))
+          setImportResults(prev => prev.map(r => r.uid === uid ? { ...r, status: 'done', data: json.data } : r))
         } else {
-          setImportResults(prev => prev.map((r, j) => j === idx ? { ...r, status: 'error', error: json.error } : r))
+          setImportResults(prev => prev.map(r => r.uid === uid ? { ...r, status: 'error', error: json.error } : r))
         }
       } catch {
-        setImportResults(prev => prev.map((r, j) => j === idx ? { ...r, status: 'error', error: 'Error de conexión' } : r))
+        setImportResults(prev => prev.map(r => r.uid === uid ? { ...r, status: 'error', error: 'Error de conexión' } : r))
       }
     }
   }
 
-  const saveImported = async (result: ImportResult, idx: number) => {
-    if (!result.data) return
-    const defaults = {
-      city: 'Tampa', state: 'FL', zip: '', property_type: 'Multifamily',
-      num_units: 4, beds_per_unit: 2, baths_per_unit: 1,
-      year_built: null, sqft: null, image_url: null, ylopo_link: null, video_url: null, description: null,
-      equity_percent: 25, annual_interest_rate: 7.0, loan_term_years: 30,
-      monthly_rent_year1: 0, rent_increase_percent: 3, vacancy_rate: 5,
-      insurance: 14000, maintenance_percent: 3, property_mgmt_percent: 10,
-      utilities_percent: 0, broker_fees: 0, hoa: 0, property_tax: 15000,
-      tax_rate: 28, depreciation_years: 27.5, points_percent: 0,
-      other_equity_spent: 0, total_equity_invested: 0,
-    }
-    const body = { ...defaults, ...result.data }
+  const saveOne = async (uid: string, data: Partial<Property>) => {
+    const body = { ...IMPORT_DEFAULTS, ...data }
     const res = await fetch('/api/properties', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
@@ -112,11 +117,24 @@ export default function AdminPage() {
     })
     if (res.ok) {
       const saved = await res.json()
-      setImportResults(prev => prev.map((r, j) => j === idx ? { ...r, saved: true } : r))
+      setImportResults(prev => prev.map(r => r.uid === uid ? { ...r, savedId: saved.id } : r))
       setProperties(prev => [saved, ...prev])
-      router.push(`/admin/${saved.id}/edit`)
+      return saved.id as string
     }
+    return null
   }
+
+  const saveAllImported = async () => {
+    setSavingAll(true)
+    const pending = importResults.filter(r => r.status === 'done' && !r.savedId && r.data)
+    for (const r of pending) {
+      await saveOne(r.uid, r.data!)
+    }
+    setSavingAll(false)
+  }
+
+  const pendingCount = importResults.filter(r => r.status === 'done' && !r.savedId).length
+  const processingCount = importResults.filter(r => r.status === 'processing' || r.status === 'pending').length
 
   if (!authenticated) {
     return (
@@ -180,7 +198,7 @@ export default function AdminPage() {
           </div>
           <div className="flex gap-2">
             <input ref={fileRef} type="file" accept=".pdf" multiple className="hidden"
-              onChange={e => e.target.files && handleFilesSelected(e.target.files)} />
+              onChange={e => { if (e.target.files) { handleFilesSelected(e.target.files); e.target.value = '' } }} />
             <button onClick={() => fileRef.current?.click()}
               className="flex items-center gap-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold px-4 py-2.5 rounded-xl transition-colors text-sm">
               <Upload className="w-4 h-4" /> Importar PDFs
@@ -196,41 +214,56 @@ export default function AdminPage() {
         {showImport && importResults.length > 0 && (
           <div className="mb-6 bg-white rounded-xl border border-amber-200 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-5 py-3 bg-amber-50 border-b border-amber-200">
-              <p className="text-sm font-bold text-amber-800">Importación de PDFs</p>
-              <button onClick={() => { setShowImport(false); setImportResults([]) }}
-                className="text-amber-600 hover:text-amber-800">
-                <X className="w-4 h-4" />
+              <div className="flex items-center gap-3">
+                <p className="text-sm font-bold text-amber-800">
+                  Importación de PDFs
+                  {processingCount > 0 && <span className="ml-2 text-xs font-normal">Procesando {processingCount}...</span>}
+                </p>
+                {pendingCount > 0 && processingCount === 0 && (
+                  <button
+                    onClick={saveAllImported}
+                    disabled={savingAll}
+                    className="flex items-center gap-1.5 bg-[#0a1628] text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-[#152238] disabled:opacity-50 transition-colors"
+                  >
+                    {savingAll ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
+                    Guardar todas ({pendingCount})
+                  </button>
+                )}
+              </div>
+              <button onClick={() => { setShowImport(false); setImportResults([]) }}>
+                <X className="w-4 h-4 text-amber-600 hover:text-amber-800" />
               </button>
             </div>
-            <div className="divide-y divide-gray-100">
-              {importResults.map((r, i) => (
-                <div key={i} className="px-5 py-4 flex items-start gap-3">
-                  <div className="mt-0.5 flex-shrink-0">
+            <div className="divide-y divide-gray-100 max-h-80 overflow-y-auto">
+              {importResults.map((r) => (
+                <div key={r.uid} className="px-5 py-3 flex items-center gap-3">
+                  <div className="flex-shrink-0">
                     {r.status === 'processing' && <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />}
-                    {r.status === 'done' && !r.saved && <CheckCircle className="w-4 h-4 text-green-500" />}
-                    {r.status === 'error' && <AlertCircle className="w-4 h-4 text-red-500" />}
                     {r.status === 'pending' && <div className="w-4 h-4 rounded-full border-2 border-gray-300" />}
-                    {r.saved && <CheckCircle className="w-4 h-4 text-blue-500" />}
+                    {r.status === 'done' && !r.savedId && <CheckCircle className="w-4 h-4 text-green-500" />}
+                    {r.status === 'done' && r.savedId && <CheckCircle className="w-4 h-4 text-blue-500" />}
+                    {r.status === 'error' && <AlertCircle className="w-4 h-4 text-red-500" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-gray-700 truncate">{r.filename}</p>
-                    {r.status === 'processing' && <p className="text-xs text-amber-600 mt-0.5">Analizando con Claude AI...</p>}
-                    {r.status === 'error' && <p className="text-xs text-red-500 mt-0.5">{r.error}</p>}
+                    {r.status === 'processing' && <p className="text-xs text-amber-600">Analizando con Claude AI...</p>}
+                    {r.status === 'error' && <p className="text-xs text-red-500">{r.error}</p>}
                     {r.status === 'done' && r.data && (
-                      <div className="mt-1">
-                        <p className="text-xs text-gray-600">{r.data.address}, {r.data.city} {r.data.state} · ${Number(r.data.purchase_price || 0).toLocaleString()}</p>
-                        {r.saved
-                          ? <p className="text-xs text-blue-600 mt-1 font-semibold">Guardada — editando detalles financieros...</p>
-                          : (
-                            <button onClick={() => saveImported(r, i)}
-                              className="mt-2 text-xs bg-[#0a1628] text-white px-3 py-1 rounded-lg hover:bg-[#152238] font-semibold">
-                              Guardar y completar detalles →
-                            </button>
-                          )
-                        }
-                      </div>
+                      <p className="text-xs text-gray-500">{r.data.address}, {r.data.city} · ${Number(r.data.purchase_price || 0).toLocaleString()}</p>
                     )}
                   </div>
+                  {r.status === 'done' && r.savedId && (
+                    <button onClick={() => router.push(`/admin/${r.savedId}/edit`)}
+                      className="flex-shrink-0 text-xs text-blue-600 hover:text-blue-800 font-semibold whitespace-nowrap">
+                      Editar detalles →
+                    </button>
+                  )}
+                  {r.status === 'done' && !r.savedId && (
+                    <button onClick={() => saveOne(r.uid, r.data!)}
+                      className="flex-shrink-0 text-xs bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 rounded-lg hover:bg-green-100 font-semibold whitespace-nowrap">
+                      Guardar
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
