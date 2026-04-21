@@ -6,11 +6,42 @@ import { Property } from '@/lib/types'
 import { calculateFinancials, fmtCurrency, fmtPercent } from '@/lib/calculations'
 import { Building2, MapPin, BedDouble, Bath, TrendingUp, ArrowRight, MapPinned } from 'lucide-react'
 
-export default function PropertyGrid({ properties }: { properties: Property[] }) {
-  const cities = ['Todas', ...Array.from(new Set(properties.map(p => p.city))).sort()]
-  const [activeCity, setActiveCity] = useState('Todas')
+const METRO_MAP: Record<string, string> = {
+  'Tampa': 'Tampa Metro',
+  'Tampa Metro': 'Tampa Metro',
+  'St Petersburg': 'Tampa Metro',
+  'Saint Petersburg': 'Tampa Metro',
+  'Pinellas Park': 'Tampa Metro',
+  'Largo': 'Tampa Metro',
+  'Clearwater': 'Tampa Metro',
+  'Dunedin': 'Tampa Metro',
+  'Sarasota': 'Tampa Metro',
+  'Bradenton': 'Tampa Metro',
+  'Orlando': 'Orlando Metro',
+  'Orlando Metro': 'Orlando Metro',
+  'St Cloud': 'Orlando Metro',
+  'Saint Cloud': 'Orlando Metro',
+  'Kissimmee': 'Orlando Metro',
+  'Daytona Beach': 'Orlando Metro',
+  'Miami': 'Miami Metro',
+  'Miami Metro': 'Miami Metro',
+  'Hialeah': 'Miami Metro',
+  'Fort Lauderdale': 'Miami Metro',
+  'Boca Raton': 'Miami Metro',
+  'West Palm Beach': 'Miami Metro',
+}
 
-  const filtered = activeCity === 'Todas' ? properties : properties.filter(p => p.city === activeCity)
+function getMetro(city: string): string {
+  return METRO_MAP[city] ?? city
+}
+
+export default function PropertyGrid({ properties }: { properties: Property[] }) {
+  const metros = ['Todas', ...Array.from(new Set(properties.map(p => getMetro(p.city)))).sort()]
+  const [activeMetro, setActiveMetro] = useState('Todas')
+
+  const filtered = activeMetro === 'Todas'
+    ? properties
+    : properties.filter(p => getMetro(p.city) === activeMetro)
 
   if (properties.length === 0) {
     return (
@@ -39,25 +70,25 @@ export default function PropertyGrid({ properties }: { properties: Property[] })
         </h2>
       </div>
 
-      {/* City filters */}
-      {cities.length > 2 && (
+      {/* Metro filters */}
+      {metros.length > 2 && (
         <div className="flex flex-wrap gap-2 mb-6">
-          {cities.map(city => {
-            const count = city === 'Todas' ? properties.length : properties.filter(p => p.city === city).length
+          {metros.map(metro => {
+            const count = metro === 'Todas' ? properties.length : properties.filter(p => getMetro(p.city) === metro).length
             return (
               <button
-                key={city}
-                onClick={() => setActiveCity(city)}
+                key={metro}
+                onClick={() => setActiveMetro(metro)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-all ${
-                  activeCity === city
+                  activeMetro === metro
                     ? 'bg-[#0a1628] text-[#C9A840] shadow-sm'
                     : 'bg-white border border-gray-200 text-gray-600 hover:border-[#C9A840]/50 hover:text-[#0a1628]'
                 }`}
               >
                 <MapPinned className="w-3.5 h-3.5" />
-                {city}
+                {metro}
                 <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                  activeCity === city ? 'bg-[#C9A840]/20 text-[#C9A840]' : 'bg-gray-100 text-gray-500'
+                  activeMetro === metro ? 'bg-[#C9A840]/20 text-[#C9A840]' : 'bg-gray-100 text-gray-500'
                 }`}>
                   {count}
                 </span>
@@ -71,7 +102,7 @@ export default function PropertyGrid({ properties }: { properties: Property[] })
       {filtered.length === 0 ? (
         <div className="text-center py-16">
           <MapPin className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500">No hay propiedades disponibles en {activeCity}.</p>
+          <p className="text-gray-500">No hay propiedades disponibles en {activeMetro}.</p>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -90,9 +121,9 @@ export default function PropertyGrid({ properties }: { properties: Property[] })
               <Link key={p.id} href={`/property/${p.id}`} className="group">
                 <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all duration-200 ${p.status === 'sold' ? 'border-gray-200 opacity-75' : 'border-gray-200 hover:shadow-lg hover:border-[#C9A840]/50'}`}>
                   <div className="relative">
-                  {p.image_url ? (
+                  {(p.image_urls?.[0] || p.image_url) ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.image_url} alt={p.address} className={`w-full h-48 object-cover transition-transform duration-300 ${p.status !== 'sold' ? 'group-hover:scale-[1.02]' : ''}`} />
+                    <img src={p.image_urls?.[0] || p.image_url!} alt={p.address} className={`w-full h-48 object-cover transition-transform duration-300 ${p.status !== 'sold' ? 'group-hover:scale-[1.02]' : ''}`} />
                   ) : (
                     <div className="w-full h-48 bg-gradient-to-br from-[#0a1628] to-[#152238] flex items-center justify-center">
                       <Building2 className="w-14 h-14 text-[#C9A840]/40" />
