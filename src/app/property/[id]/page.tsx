@@ -9,7 +9,7 @@ import {
   MapPin, Home, BedDouble, Bath, TrendingUp, DollarSign,
   BarChart3, Building2, ExternalLink, ChevronDown, ChevronUp,
   Calendar, Percent, CircleDollarSign, SlidersHorizontal, RotateCcw,
-  Printer, Play, LineChart, ChevronLeft, ChevronRight,
+  Printer, Play, LineChart, ChevronLeft,
 } from 'lucide-react'
 
 const FinancialCharts = dynamic(() => import('@/components/FinancialCharts'), { ssr: false })
@@ -261,7 +261,6 @@ export default function PropertyPage() {
   const [calcInputs, setCalcInputs] = useState<CalcFields | null>(null)
   const [scenario, setScenario] = useState<'actual' | 'mejorado'>('actual')
   const [lang, setLang] = useState<Lang>('es')
-  const [imgIdx, setImgIdx] = useState(0)
 
   const t = T[lang]
 
@@ -431,49 +430,20 @@ export default function PropertyPage() {
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row gap-6">
             {(() => {
-              const images = property.image_urls?.length
-                ? property.image_urls
-                : property.image_url ? [property.image_url] : []
-              if (!images.length) return null
+              const mainImage = property.image_urls?.[0] || property.image_url
+              if (!mainImage) return null
               return (
                 <div className="md:w-80 flex-shrink-0">
                   <div className="relative rounded-xl overflow-hidden border border-white/10">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={images[imgIdx]} alt={property.address}
-                      className="w-full h-52 object-cover" />
-                    {images.length > 1 && (
-                      <>
-                        <button
-                          onClick={() => setImgIdx(i => (i - 1 + images.length) % images.length)}
-                          className="absolute left-1 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 transition-colors">
-                          <ChevronLeft className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setImgIdx(i => (i + 1) % images.length)}
-                          className="absolute right-1 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 transition-colors">
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                        <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
-                          {images.map((_, i) => (
-                            <button key={i} onClick={() => setImgIdx(i)}
-                              className={`w-1.5 h-1.5 rounded-full transition-all ${i === imgIdx ? 'bg-[#C9A840] w-3' : 'bg-white/50'}`} />
-                          ))}
-                        </div>
-                        <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded-full">
-                          {imgIdx + 1}/{images.length}
-                        </div>
-                      </>
+                    <img src={mainImage} alt={property.address} className="w-full h-52 object-cover" />
+                    {property.ylopo_link && (
+                      <a href={property.ylopo_link} target="_blank" rel="noopener noreferrer"
+                        className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-black/70 hover:bg-black/90 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors backdrop-blur-sm">
+                        <Home className="w-3 h-3" /> {lang === 'en' ? 'More Photos' : 'Ver más fotos'} <ExternalLink className="w-3 h-3" />
+                      </a>
                     )}
                   </div>
-                  {images.length > 1 && (
-                    <div className="flex gap-1 mt-2 overflow-x-auto pb-1">
-                      {images.map((url, i) => (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img key={i} src={url} alt="" onClick={() => setImgIdx(i)}
-                          className={`w-12 h-10 object-cover rounded cursor-pointer flex-shrink-0 transition-all ${i === imgIdx ? 'ring-2 ring-[#C9A840]' : 'opacity-60 hover:opacity-100'}`} />
-                      ))}
-                    </div>
-                  )}
                 </div>
               )
             })()}
