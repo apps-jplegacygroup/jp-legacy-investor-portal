@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { PropertyFormData } from '@/lib/types'
+import { Upload, X, Loader2 } from 'lucide-react'
 
 const defaultValues: PropertyFormData = {
   address: '',
@@ -38,6 +39,9 @@ const defaultValues: PropertyFormData = {
   points_percent: 0,
   other_equity_spent: 0,
   total_equity_invested: 165000,
+  monthly_rent_improved: null,
+  renovation_cost: null,
+  renovation_notes: null,
 }
 
 interface Props {
@@ -47,15 +51,8 @@ interface Props {
 }
 
 function Field({ label, name, type = 'text', prefix, suffix, help, value, onChange, required }: {
-  label: string
-  name: string
-  type?: string
-  prefix?: string
-  suffix?: string
-  help?: string
-  value: string | number | null
-  onChange: (v: string) => void
-  required?: boolean
+  label: string; name: string; type?: string; prefix?: string; suffix?: string
+  help?: string; value: string | number | null; onChange: (v: string) => void; required?: boolean
 }) {
   return (
     <div>
@@ -79,10 +76,10 @@ function Field({ label, name, type = 'text', prefix, suffix, help, value, onChan
   )
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, accent }: { title: string; children: React.ReactNode; accent?: boolean }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-      <h3 className="text-sm font-bold text-[#0a1628] uppercase tracking-wider mb-4 pb-2 border-b border-gray-100">
+    <div className={`rounded-xl border p-6 shadow-sm ${accent ? 'bg-amber-50 border-amber-200' : 'bg-white border-gray-200'}`}>
+      <h3 className={`text-sm font-bold uppercase tracking-wider mb-4 pb-2 border-b ${accent ? 'text-amber-800 border-amber-200' : 'text-[#0a1628] border-gray-100'}`}>
         {title}
       </h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{children}</div>
@@ -94,7 +91,9 @@ export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
   const router = useRouter()
   const [form, setForm] = useState<PropertyFormData>({ ...defaultValues, ...initial })
   const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const set = (field: keyof PropertyFormData) => (v: string) => {
     setForm(prev => ({
@@ -102,6 +101,33 @@ export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
       [field]: v === '' ? null
         : (typeof defaultValues[field] === 'number' ? Number(v) : v),
     }))
+  }
+
+  const handleImageUpload = async (file: File) => {
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+    if (!cloudName || !uploadPreset) {
+      // Fallback: use object URL for preview, keep as data URL
+      const reader = new FileReader()
+      reader.onload = e => setForm(prev => ({ ...prev, image_url: e.target?.result as string }))
+      reader.readAsDataURL(file)
+      return
+    }
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('upload_preset', uploadPreset)
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: 'POST', body: fd,
+      })
+      const data = await res.json()
+      if (data.secure_url) {
+        setForm(prev => ({ ...prev, image_url: data.secure_url }))
+      }
+    } finally {
+      setUploading(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -132,9 +158,7 @@ export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-          {error}
-        </div>
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>
       )}
 
       <Section title="Información de la Propiedad">
@@ -143,12 +167,8 @@ export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
         </div>
         <div>
           <label className="block text-xs font-semibold text-gray-700 mb-1">Ciudad <span className="text-red-500">*</span></label>
-          <select
-            value={form.city}
-            onChange={e => setForm(prev => ({ ...prev, city: e.target.value }))}
-            required
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#C9A840] focus:border-[#C9A840] bg-white"
-          >
+          <select value={form.city} onChange={e => setForm(prev => ({ ...prev, city: e.target.value }))} required
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#C9A840] bg-white">
             <option value="Tampa Metro">Tampa Metro</option>
             <option value="Orlando Metro">Orlando Metro</option>
             <option value="Miami Metro">Miami Metro</option>
@@ -162,9 +182,31 @@ export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
         <Field label="Baños por Unidad" name="baths_per_unit" type="number" value={form.baths_per_unit} onChange={set('baths_per_unit')} />
         <Field label="Año de Construcción" name="year_built" type="number" value={form.year_built} onChange={set('year_built')} />
         <Field label="Pies Cuadrados (sqft)" name="sqft" type="number" value={form.sqft} onChange={set('sqft')} />
+
+        {/* Photo Upload */}
         <div className="sm:col-span-2">
-          <Field label="URL de Imagen" name="image_url" value={form.image_url} onChange={set('image_url')} help="URL directa de la imagen (jpg, png, webp)" />
+          <label className="block text-xs font-semibold text-gray-700 mb-1">Foto de la Propiedad</label>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden"
+            onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0])} />
+          {form.image_url ? (
+            <div className="relative inline-block">
+              <img src={form.image_url} alt="preview" className="w-full max-w-xs h-36 object-cover rounded-lg border border-gray-200" />
+              <button type="button" onClick={() => setForm(prev => ({ ...prev, image_url: null }))}
+                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600">
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
+              className="flex items-center gap-2 border-2 border-dashed border-gray-300 hover:border-[#C9A840] rounded-lg px-6 py-4 text-sm text-gray-500 hover:text-[#0a1628] transition-colors disabled:opacity-50">
+              {uploading ? <><Loader2 className="w-4 h-4 animate-spin" /> Subiendo...</> : <><Upload className="w-4 h-4" /> Subir foto desde tu computadora</>}
+            </button>
+          )}
+          <div className="sm:col-span-2 mt-2">
+            <Field label="O pega URL de imagen" name="image_url" value={form.image_url} onChange={set('image_url')} help="URL directa de la imagen (jpg, png, webp)" />
+          </div>
         </div>
+
         <div className="sm:col-span-2">
           <Field label="Link de Ylopo / MLS" name="ylopo_link" value={form.ylopo_link} onChange={set('ylopo_link')} />
         </div>
@@ -173,28 +215,44 @@ export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
         </div>
         <div className="sm:col-span-2">
           <label className="block text-xs font-semibold text-gray-700 mb-1">Descripción</label>
-          <textarea
-            value={form.description ?? ''}
-            onChange={e => setForm(prev => ({ ...prev, description: e.target.value || null }))}
-            rows={3}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#C9A840] focus:border-[#C9A840]"
-          />
+          <textarea value={form.description ?? ''} onChange={e => setForm(prev => ({ ...prev, description: e.target.value || null }))}
+            rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#C9A840]" />
         </div>
       </Section>
 
       <Section title="Variables del Préstamo">
         <Field label="Precio de Compra" name="purchase_price" type="number" prefix="$" value={form.purchase_price} onChange={set('purchase_price')} required />
-        <Field label="Down Payment %" name="equity_percent" type="number" suffix="%" value={form.equity_percent} onChange={set('equity_percent')} help="Ej: 5 = 5%" required />
+        <Field label="Down Payment %" name="equity_percent" type="number" suffix="%" value={form.equity_percent} onChange={set('equity_percent')} help="Ej: 25 = 25%" required />
         <Field label="Tasa de Interés Anual" name="annual_interest_rate" type="number" suffix="%" value={form.annual_interest_rate} onChange={set('annual_interest_rate')} required />
         <Field label="Plazo del Préstamo (años)" name="loan_term_years" type="number" value={form.loan_term_years} onChange={set('loan_term_years')} required />
         <Field label="Puntos del Préstamo (%)" name="points_percent" type="number" suffix="%" value={form.points_percent} onChange={set('points_percent')} />
         <Field label="Equity Total Invertido" name="total_equity_invested" type="number" prefix="$" value={form.total_equity_invested} onChange={set('total_equity_invested')} help="Down payment + costos adicionales" required />
       </Section>
 
-      <Section title="Variables de Ingresos">
+      <Section title="Escenario Actual — Renta Actual">
         <Field label="Renta Mensual Año 1 (todas las unidades)" name="monthly_rent_year1" type="number" prefix="$" value={form.monthly_rent_year1} onChange={set('monthly_rent_year1')} required />
         <Field label="Incremento Anual de Renta" name="rent_increase_percent" type="number" suffix="%" value={form.rent_increase_percent} onChange={set('rent_increase_percent')} />
         <Field label="Tasa de Vacancia" name="vacancy_rate" type="number" suffix="%" value={form.vacancy_rate} onChange={set('vacancy_rate')} />
+      </Section>
+
+      <Section title="Escenario Mejorado — Renta con Renovación Cosmética" accent>
+        <div className="sm:col-span-2">
+          <p className="text-xs text-amber-700 mb-3">
+            Define el escenario después de una mejora cosmética que lleva las rentas al mercado actual.
+          </p>
+        </div>
+        <Field label="Renta Mensual Mejorada (todas las unidades)" name="monthly_rent_improved" type="number" prefix="$"
+          value={form.monthly_rent_improved} onChange={set('monthly_rent_improved')}
+          help="Renta estimada después de renovación cosmética" />
+        <Field label="Costo de Renovación Estimado *" name="renovation_cost" type="number" prefix="$"
+          value={form.renovation_cost} onChange={set('renovation_cost')}
+          help="* Estimado — verificar con su contratista antes de tomar decisiones" />
+        <div className="sm:col-span-2">
+          <label className="block text-xs font-semibold text-gray-700 mb-1">Descripción de Mejoras</label>
+          <textarea value={form.renovation_notes ?? ''} onChange={e => setForm(prev => ({ ...prev, renovation_notes: e.target.value || null }))}
+            rows={2} placeholder="Ej: Pintura, pisos, cocina, baños — llevar rentas de $1,200 a $1,500/unidad"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#C9A840]" />
+        </div>
       </Section>
 
       <Section title="Variables de Gastos">
@@ -214,18 +272,12 @@ export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
       </Section>
 
       <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={loading}
-          className="flex-1 bg-[#0a1628] hover:bg-[#152238] text-white font-bold py-3 px-6 rounded-xl transition-colors disabled:opacity-50"
-        >
+        <button type="submit" disabled={loading}
+          className="flex-1 bg-[#0a1628] hover:bg-[#152238] text-white font-bold py-3 px-6 rounded-xl transition-colors disabled:opacity-50">
           {loading ? 'Guardando...' : propertyId ? 'Guardar Cambios' : 'Crear Propiedad'}
         </button>
-        <button
-          type="button"
-          onClick={() => router.push('/admin')}
-          className="px-6 py-3 border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors font-medium"
-        >
+        <button type="button" onClick={() => router.push('/admin')}
+          className="px-6 py-3 border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors font-medium">
           Cancelar
         </button>
       </div>

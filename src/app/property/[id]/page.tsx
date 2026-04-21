@@ -80,6 +80,7 @@ export default function PropertyPage() {
   const [showCharts, setShowCharts] = useState(false)
   const [activeYear, setActiveYear] = useState(1)
   const [calcInputs, setCalcInputs] = useState<CalcFields | null>(null)
+  const [scenario, setScenario] = useState<'actual' | 'mejorado'>('actual')
 
   useEffect(() => {
     if (!id) return
@@ -91,18 +92,23 @@ export default function PropertyPage() {
 
   const defaults = useMemo<CalcFields | null>(() => {
     if (!property) return null
+    const rent = scenario === 'mejorado' && property.monthly_rent_improved
+      ? Number(property.monthly_rent_improved)
+      : Number(property.monthly_rent_year1)
     return {
       purchase_price: String(Number(property.purchase_price)),
       equity_percent: String(Number(property.equity_percent)),
       annual_interest_rate: String(Number(property.annual_interest_rate)),
-      monthly_rent_year1: String(Number(property.monthly_rent_year1)),
+      monthly_rent_year1: String(rent),
       rent_increase_percent: String(Number(property.rent_increase_percent)),
       vacancy_rate: String(Number(property.vacancy_rate)),
     }
-  }, [property])
+  }, [property, scenario])
 
   const inputs = calcInputs ?? defaults
   const isDirty = calcInputs !== null
+
+  const hasImprovedScenario = !!(property?.monthly_rent_improved && Number(property.monthly_rent_improved) > 0)
 
   const financials = useMemo<FinancialSummary | null>(() => {
     if (!property || !inputs) return null
@@ -239,6 +245,36 @@ export default function PropertyPage() {
           </div>
         </div>
       </div>
+
+      {/* Scenario Toggle */}
+      {hasImprovedScenario && (
+        <div className="bg-white border-b border-gray-200 no-print">
+          <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3 flex-wrap">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Escenario:</span>
+            <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+              <button onClick={() => { setScenario('actual'); setCalcInputs(null) }}
+                className={`px-4 py-2 text-sm font-semibold transition-colors ${scenario === 'actual' ? 'bg-[#0a1628] text-[#C9A840]' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+                Renta Actual
+              </button>
+              <button onClick={() => { setScenario('mejorado'); setCalcInputs(null) }}
+                className={`px-4 py-2 text-sm font-semibold transition-colors ${scenario === 'mejorado' ? 'bg-amber-500 text-white' : 'bg-white text-gray-600 hover:bg-amber-50'}`}>
+                ✦ Renta Mejorada
+              </button>
+            </div>
+            {scenario === 'mejorado' && property?.renovation_notes && (
+              <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg">
+                {property.renovation_notes}
+              </span>
+            )}
+            {scenario === 'mejorado' && property?.renovation_cost && Number(property.renovation_cost) > 0 && (
+              <span className="text-xs text-gray-500">
+                Costo est. renovación: <strong className="text-amber-700">{fmtCurrency(Number(property.renovation_cost))}</strong>
+                <span className="ml-1 text-gray-400">*verificar con contratista</span>
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8 space-y-8">

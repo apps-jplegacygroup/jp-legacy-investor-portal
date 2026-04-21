@@ -36,6 +36,11 @@ export interface Property {
   other_equity_spent: number
   total_equity_invested: number
 
+  // Improved scenario
+  monthly_rent_improved: number | null
+  renovation_cost: number | null
+  renovation_notes: string | null
+
   is_active: boolean
   created_at: string
   updated_at: string
@@ -122,4 +127,9 @@ export interface PropertyFormData {
   points_percent: number
   other_equity_spent: number
   total_equity_invested: number
+
+  // Improved scenario
+  monthly_rent_improved: number | null
+  renovation_cost: number | null
+  renovation_notes: string | null
 }

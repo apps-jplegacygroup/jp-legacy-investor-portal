@@ -30,10 +30,12 @@ export async function POST(req: NextRequest) {
         monthly_rent_year1, rent_increase_percent, vacancy_rate,
         insurance, maintenance_percent, property_mgmt_percent, utilities_percent,
         broker_fees, hoa, property_tax, tax_rate, depreciation_years,
-        points_percent, other_equity_spent, total_equity_invested
+        points_percent, other_equity_spent, total_equity_invested,
+        monthly_rent_improved, renovation_cost, renovation_notes
       ) VALUES (
         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,
-        $15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33
+        $15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,
+        $34,$35,$36
       ) RETURNING *`,
       [
         body.address, body.city, body.state, body.zip, body.property_type,
@@ -46,6 +48,7 @@ export async function POST(req: NextRequest) {
         body.property_mgmt_percent, body.utilities_percent, body.broker_fees,
         body.hoa, body.property_tax, body.tax_rate, body.depreciation_years,
         body.points_percent, body.other_equity_spent, body.total_equity_invested,
+        body.monthly_rent_improved || null, body.renovation_cost || null, body.renovation_notes || null,
       ]
     )
     return NextResponse.json(property, { status: 201 })

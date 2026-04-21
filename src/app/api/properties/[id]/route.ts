@@ -36,8 +36,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         vacancy_rate=$21, insurance=$22, maintenance_percent=$23,
         property_mgmt_percent=$24, utilities_percent=$25, broker_fees=$26,
         hoa=$27, property_tax=$28, tax_rate=$29, depreciation_years=$30,
-        points_percent=$31, other_equity_spent=$32, total_equity_invested=$33
-      WHERE id=$34 RETURNING *`,
+        points_percent=$31, other_equity_spent=$32, total_equity_invested=$33,
+        monthly_rent_improved=$34, renovation_cost=$35, renovation_notes=$36
+      WHERE id=$37 RETURNING *`,
       [
         body.address, body.city, body.state, body.zip, body.property_type,
         body.num_units, body.beds_per_unit, body.baths_per_unit,
@@ -49,6 +50,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         body.property_mgmt_percent, body.utilities_percent, body.broker_fees,
         body.hoa, body.property_tax, body.tax_rate, body.depreciation_years,
         body.points_percent, body.other_equity_spent, body.total_equity_invested,
+        body.monthly_rent_improved || null, body.renovation_cost || null, body.renovation_notes || null,
         id,
       ]
     )

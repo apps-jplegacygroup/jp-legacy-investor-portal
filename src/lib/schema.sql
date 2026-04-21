@@ -40,6 +40,10 @@ CREATE TABLE IF NOT EXISTS properties (
   other_equity_spent DECIMAL(10,2) NOT NULL DEFAULT 0,
   total_equity_invested DECIMAL(12,2) NOT NULL DEFAULT 0,
 
+  monthly_rent_improved DECIMAL(10,2),
+  renovation_cost DECIMAL(10,2),
+  renovation_notes TEXT,
+
   is_active BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
