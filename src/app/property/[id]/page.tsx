@@ -498,6 +498,28 @@ export default function PropertyPage() {
           </section>
         </div>
 
+        {/* Disclaimer */}
+        <section className="bg-gray-50 border border-gray-200 rounded-xl p-5 text-xs text-gray-500 leading-relaxed">
+          <p className="font-bold text-gray-700 mb-2 uppercase tracking-wide text-xs">⚠ Aviso Legal — Proyecciones Estimadas</p>
+          <p>
+            Todos los escenarios presentados en este análisis — incluyendo cash flow, retorno sobre la inversión (ROI), cap rate,
+            cash on cash return y proyecciones a 5 años — son <strong className="text-gray-600">estimaciones basadas en condiciones actuales del mercado</strong> y
+            los datos ingresados. Los resultados reales pueden variar significativamente dependiendo de múltiples factores, incluyendo
+            pero no limitados a: tasas de interés ofrecidas por el lender al momento del cierre, condiciones del mercado inmobiliario,
+            niveles reales de vacancia, costos de mantenimiento y reparaciones inesperadas, cambios en impuestos a la propiedad,
+            variaciones en el mercado de rentas, costos de administración, y factores macroeconómicos.
+          </p>
+          <p className="mt-2">
+            Los costos de renovación son estimados y deben ser verificados con un contratista licenciado antes de tomar decisiones de inversión.
+            Este análisis <strong className="text-gray-600">no constituye asesoramiento financiero, legal ni fiscal</strong>.
+            Se recomienda consultar con un asesor financiero certificado, contador (CPA) y/o abogado especializado en bienes raíces
+            antes de realizar cualquier inversión.
+          </p>
+          <p className="mt-2 text-gray-400">
+            JP Legacy Group es un equipo de bienes raíces operando bajo eXp Realty, LLC — Licencia # CQ1062304, Estado de Florida.
+          </p>
+        </section>
+
         {/* Amortization toggle */}
         <section>
           <button onClick={() => setShowAmort(!showAmort)}
@@ -563,8 +585,7 @@ export default function PropertyPage() {
             </div>
           </div>
           <p className="text-xs text-gray-500 text-center">
-            Este análisis es informativo. Los números proyectados son estimaciones basadas en los datos ingresados.
-            Consulta con un asesor financiero antes de invertir.
+            © {new Date().getFullYear()} JP Legacy Group · Powered by eXp Realty
           </p>
           <a href="https://www.jplegacygroup.com" target="_blank" rel="noopener noreferrer"
             className="text-xs text-[#C9A840] hover:underline">
