@@ -4,12 +4,12 @@ import Anthropic from '@anthropic-ai/sdk'
 export const maxDuration = 60
 
 export async function POST(req: NextRequest) {
-  const adminKey = req.headers.get('x-admin-key')
-  if (adminKey !== process.env.ADMIN_SECRET) {
+  const formData = await req.formData()
+  const adminKey = req.headers.get('x-admin-key') || (formData.get('adminKey') as string | null)
+  if (!adminKey || adminKey !== process.env.ADMIN_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const formData = await req.formData()
   const file = formData.get('file') as File | null
   if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
 
@@ -47,6 +47,10 @@ Return ONLY a valid JSON array (even if just one property). Each object must hav
     "year_built": integer year or null,
     "sqft": integer total sqft or null,
     "purchase_price": listing price as number (required),
+    "monthly_rent_year1": current total monthly rent for all units as number or 0 if not found,
+    "property_tax": annual property tax as number or 0 if not found,
+    "insurance": annual insurance cost as number or 0 if not found,
+    "hoa": annual HOA fee as number or 0 if not found,
     "description": "brief property description max 150 chars",
     "image_url": null,
     "ylopo_link": null,
@@ -57,6 +61,10 @@ Return ONLY a valid JSON array (even if just one property). Each object must hav
 Rules:
 - If the PDF has multiple listings, return one object per listing
 - purchase_price is required — skip properties with no price
+- For monthly_rent_year1: look for "gross rent", "current rent", "monthly income", "rental income" — return total for all units per month
+- For property_tax: look for "taxes", "tax amount", "annual taxes" — return annual amount
+- For insurance: look for "insurance", "hazard insurance" — return annual amount
+- If a financial field is not found in the PDF, return 0 (the system will estimate it)
 - Return ONLY the JSON array, no explanation, no markdown, no code blocks`,
           },
         ],

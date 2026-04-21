@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS properties (
   year_built INTEGER,
   sqft INTEGER,
   image_url TEXT,
+  image_urls TEXT[],
   ylopo_link TEXT,
   video_url TEXT,
   description TEXT,

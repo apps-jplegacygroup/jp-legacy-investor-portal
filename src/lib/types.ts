@@ -11,6 +11,7 @@ export interface Property {
   year_built: number | null
   sqft: number | null
   image_url: string | null
+  image_urls: string[] | null
   ylopo_link: string | null
   video_url: string | null
   description: string | null
@@ -106,6 +107,7 @@ export interface PropertyFormData {
   year_built: number | null
   sqft: number | null
   image_url: string | null
+  image_urls: string[] | null
   ylopo_link: string | null
   video_url: string | null
   description: string | null

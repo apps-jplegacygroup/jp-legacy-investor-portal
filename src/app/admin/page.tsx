@@ -22,10 +22,19 @@ const IMPORT_DEFAULTS = {
   year_built: null, sqft: null, image_url: null, ylopo_link: null, video_url: null, description: null,
   equity_percent: 25, annual_interest_rate: 7.0, loan_term_years: 30,
   monthly_rent_year1: 0, rent_increase_percent: 3, vacancy_rate: 5,
-  insurance: 14000, maintenance_percent: 3, property_mgmt_percent: 10,
-  utilities_percent: 0, broker_fees: 0, hoa: 0, property_tax: 15000,
+  maintenance_percent: 3, property_mgmt_percent: 10,
+  utilities_percent: 0, broker_fees: 0, hoa: 0,
   tax_rate: 28, depreciation_years: 27.5, points_percent: 0,
   other_equity_spent: 0, total_equity_invested: 0,
+}
+
+function withEstimatedExpenses(data: Partial<Property>): Partial<Property> {
+  const price = Number(data.purchase_price || 0)
+  return {
+    ...data,
+    insurance: data.insurance || (price > 0 ? Math.round(price * 0.01) : 5000),
+    property_tax: data.property_tax || (price > 0 ? Math.round(price * 0.015) : 6000),
+  }
 }
 
 export default function AdminPage() {
@@ -110,6 +119,7 @@ export default function AdminPage() {
       try {
         const fd = new FormData()
         fd.append('file', file)
+        fd.append('adminKey', adminKey)
         const res = await fetch('/api/import-pdf', {
           method: 'POST',
           headers: { 'x-admin-key': adminKey },
@@ -147,7 +157,7 @@ export default function AdminPage() {
   const saveOne = async (uid: string, data: Partial<Property>) => {
     setImportResults(prev => prev.map(r => r.uid === uid ? { ...r, saving: true, saveError: undefined } : r))
     try {
-      const body = { ...IMPORT_DEFAULTS, ...data }
+      const body = withEstimatedExpenses({ ...IMPORT_DEFAULTS, ...data })
       const res = await fetch('/api/properties', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },

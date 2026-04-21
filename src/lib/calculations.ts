@@ -118,17 +118,18 @@ export function calculateFinancials(
 
     cumulativePrincipal += yearlyPrincipal
 
-    const cashOnCashBT = btCashFlowYearly / totalEquityInvested
-    const atCoCROE = atCashFlowYearly / totalEquityInvested
+    const effectiveEquity = totalEquityInvested > 0 ? totalEquityInvested : equityAmount
+    const cashOnCashBT = btCashFlowYearly / effectiveEquity
+    const atCoCROE = atCashFlowYearly / effectiveEquity
 
     const capRate = netOperatingIncome / purchasePrice
     const rentToPurchaseRatio = monthlyRent / purchasePrice
 
     const btCashPlusPrincipal = btCashFlowYearly + yearlyPrincipal
-    const btROI = btCashPlusPrincipal / totalEquityInvested
+    const btROI = btCashPlusPrincipal / effectiveEquity
 
     const atCashPlusPrincipal = atCashFlowYearly + yearlyPrincipal
-    const atROI = atCashPlusPrincipal / totalEquityInvested
+    const atROI = atCashPlusPrincipal / effectiveEquity
 
     const equityDollars = equityAmount + cumulativePrincipal
     const equityPercent = equityDollars / purchasePrice
@@ -169,7 +170,8 @@ export function calculateFinancials(
     })
   }
 
-  const paybackPeriod = totalEquityInvested / projections[0].btCashFlowYearly
+  const effectiveEquityForPayback = totalEquityInvested > 0 ? totalEquityInvested : equityAmount
+  const paybackPeriod = effectiveEquityForPayback / projections[0].btCashFlowYearly
 
   return {
     loanAmount,
