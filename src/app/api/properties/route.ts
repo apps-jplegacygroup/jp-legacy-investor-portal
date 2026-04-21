@@ -25,21 +25,21 @@ export async function POST(req: NextRequest) {
     const [property] = await query<Property>(
       `INSERT INTO properties (
         address, city, state, zip, property_type, num_units, beds_per_unit, baths_per_unit,
-        year_built, sqft, image_url, ylopo_link, description,
+        year_built, sqft, image_url, ylopo_link, video_url, description,
         purchase_price, equity_percent, annual_interest_rate, loan_term_years,
         monthly_rent_year1, rent_increase_percent, vacancy_rate,
         insurance, maintenance_percent, property_mgmt_percent, utilities_percent,
         broker_fees, hoa, property_tax, tax_rate, depreciation_years,
         points_percent, other_equity_spent, total_equity_invested
       ) VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,
-        $14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,
+        $15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33
       ) RETURNING *`,
       [
         body.address, body.city, body.state, body.zip, body.property_type,
         body.num_units, body.beds_per_unit, body.baths_per_unit,
         body.year_built || null, body.sqft || null, body.image_url || null,
-        body.ylopo_link || null, body.description || null,
+        body.ylopo_link || null, body.video_url || null, body.description || null,
         body.purchase_price, body.equity_percent, body.annual_interest_rate,
         body.loan_term_years, body.monthly_rent_year1, body.rent_increase_percent,
         body.vacancy_rate, body.insurance, body.maintenance_percent,

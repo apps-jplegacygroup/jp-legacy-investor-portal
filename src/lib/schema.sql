@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS properties (
   sqft INTEGER,
   image_url TEXT,
   ylopo_link TEXT,
+  video_url TEXT,
   description TEXT,
 
   -- Financial Inputs

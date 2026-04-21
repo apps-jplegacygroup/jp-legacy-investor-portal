@@ -17,6 +17,7 @@ const defaultValues: PropertyFormData = {
   sqft: null,
   image_url: null,
   ylopo_link: null,
+  video_url: null,
   description: null,
   purchase_price: 1000000,
   equity_percent: 5,
@@ -154,6 +155,9 @@ export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
         </div>
         <div className="sm:col-span-2">
           <Field label="Link de Ylopo / MLS" name="ylopo_link" value={form.ylopo_link} onChange={set('ylopo_link')} />
+        </div>
+        <div className="sm:col-span-2">
+          <Field label="Link de Video (Instagram, YouTube, etc.)" name="video_url" value={form.video_url} onChange={set('video_url')} help="URL del video de Instagram, YouTube o cualquier plataforma" />
         </div>
         <div className="sm:col-span-2">
           <label className="block text-xs font-semibold text-gray-700 mb-1">Descripción</label>

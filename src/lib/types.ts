@@ -12,6 +12,7 @@ export interface Property {
   sqft: number | null
   image_url: string | null
   ylopo_link: string | null
+  video_url: string | null
   description: string | null
 
   // Financial inputs
@@ -100,6 +101,7 @@ export interface PropertyFormData {
   sqft: number | null
   image_url: string | null
   ylopo_link: string | null
+  video_url: string | null
   description: string | null
   purchase_price: number
   equity_percent: number
