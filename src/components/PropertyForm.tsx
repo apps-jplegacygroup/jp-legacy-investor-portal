@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useRef, useCallback } from 'react'
+import { upload } from '@vercel/blob/client'
 import { PropertyFormData } from '@/lib/types'
-import { Upload, X, Loader2 } from 'lucide-react'
+import { Upload, X, Loader2, ImagePlus, Star } from 'lucide-react'
 
 const defaultValues: PropertyFormData = {
   address: '',
@@ -17,6 +17,7 @@ const defaultValues: PropertyFormData = {
   year_built: null,
   sqft: null,
   image_url: null,
+  image_urls: null,
   ylopo_link: null,
   video_url: null,
   description: null,
@@ -27,13 +28,13 @@ const defaultValues: PropertyFormData = {
   monthly_rent_year1: 11000,
   rent_increase_percent: 5,
   vacancy_rate: 5,
-  insurance: 14000,
+  insurance: 0,
   maintenance_percent: 3,
-  property_mgmt_percent: 3,
-  utilities_percent: 2,
+  property_mgmt_percent: 10,
+  utilities_percent: 0,
   broker_fees: 0,
   hoa: 0,
-  property_tax: 15000,
+  property_tax: 0,
   tax_rate: 28,
   depreciation_years: 27.5,
   points_percent: 0,
@@ -88,46 +89,86 @@ function Section({ title, children, accent }: { title: string; children: React.R
 }
 
 export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
-  const router = useRouter()
   const [form, setForm] = useState<PropertyFormData>({ ...defaultValues, ...initial })
   const [loading, setLoading] = useState(false)
-  const [uploading, setUploading] = useState(false)
+  const [uploadingCount, setUploadingCount] = useState(0)
+  const [uploadError, setUploadError] = useState('')
   const [error, setError] = useState('')
+  const [dragOver, setDragOver] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
+  const [imageUrls, setImageUrls] = useState<string[]>(() => {
+    const isReal = (url: string) => url.startsWith('http://') || url.startsWith('https://')
+    if (initial?.image_urls && initial.image_urls.length > 0) return initial.image_urls.filter(isReal)
+    if (initial?.image_url && isReal(initial.image_url)) return [initial.image_url]
+    return []
+  })
+
   const set = (field: keyof PropertyFormData) => (v: string) => {
-    setForm(prev => ({
-      ...prev,
-      [field]: v === '' ? null
-        : (typeof defaultValues[field] === 'number' ? Number(v) : v),
-    }))
+    setForm(prev => {
+      const next = {
+        ...prev,
+        [field]: v === '' ? null
+          : (typeof defaultValues[field] === 'number' ? Number(v) : v),
+      }
+      // Auto-calculate insurance and property_tax when purchase_price changes
+      if (field === 'purchase_price' && v) {
+        const price = Number(v)
+        if (price > 0) {
+          if (!prev.insurance || prev.insurance === 0) next.insurance = Math.round(price * 0.01)
+          if (!prev.property_tax || prev.property_tax === 0) next.property_tax = Math.round(price * 0.015)
+        }
+      }
+      return next
+    })
   }
 
-  const handleImageUpload = async (file: File) => {
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
-    if (!cloudName || !uploadPreset) {
-      // Fallback: use object URL for preview, keep as data URL
-      const reader = new FileReader()
-      reader.onload = e => setForm(prev => ({ ...prev, image_url: e.target?.result as string }))
-      reader.readAsDataURL(file)
-      return
-    }
-    setUploading(true)
-    try {
-      const fd = new FormData()
-      fd.append('file', file)
-      fd.append('upload_preset', uploadPreset)
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: 'POST', body: fd,
-      })
-      const data = await res.json()
-      if (data.secure_url) {
-        setForm(prev => ({ ...prev, image_url: data.secure_url }))
+  const uploadFile = async (file: File): Promise<string | null> => {
+    const blob = await upload(file.name, file, {
+      access: 'public',
+      handleUploadUrl: `/api/upload-image?adminKey=${encodeURIComponent(adminKey)}`,
+    })
+    return blob.url
+  }
+
+  const handleFilesSelected = useCallback(async (files: File[]) => {
+    const imageFiles = files.filter(f => f.type.startsWith('image/'))
+    if (!imageFiles.length) return
+    setUploadError('')
+    setUploadingCount(c => c + imageFiles.length)
+    let failed = 0
+    // Upload one at a time to avoid overwhelming the server
+    for (const file of imageFiles) {
+      try {
+        const url = await uploadFile(file)
+        if (url) setImageUrls(prev => [...prev, url])
+        else failed++
+      } catch (err) {
+        failed++
+        console.error('Upload failed for', file.name, err)
+        if (failed === 1) setUploadError(`Error subiendo "${file.name}": ${err instanceof Error ? err.message : 'Error desconocido'}`)
       }
-    } finally {
-      setUploading(false)
+      setUploadingCount(c => c - 1)
     }
+    if (failed > 1) setUploadError(`${failed} fotos no se pudieron subir. Intenta de nuevo.`)
+  }, [adminKey])
+
+  const removeImage = (idx: number) => {
+    setImageUrls(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  const setPrimary = (idx: number) => {
+    setImageUrls(prev => {
+      const next = [...prev]
+      const [item] = next.splice(idx, 1)
+      return [item, ...next]
+    })
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setDragOver(false)
+    handleFilesSelected(Array.from(e.dataTransfer.files))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -137,17 +178,22 @@ export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
     try {
       const url = propertyId ? `/api/properties/${propertyId}` : '/api/properties'
       const method = propertyId ? 'PUT' : 'POST'
+      const submitData = {
+        ...form,
+        image_url: imageUrls[0] || null,
+        image_urls: imageUrls.length > 0 ? imageUrls : null,
+      }
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
-        body: JSON.stringify(form),
+        body: JSON.stringify(submitData),
       })
       if (!res.ok) {
         const data = await res.json()
         throw new Error(data.error || 'Error guardando propiedad')
       }
-      const property = await res.json()
-      router.push(`/property/${property.id}`)
+      await res.json()
+      window.location.href = '/admin'
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
     } finally {
@@ -185,25 +231,121 @@ export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
 
         {/* Photo Upload */}
         <div className="sm:col-span-2">
-          <label className="block text-xs font-semibold text-gray-700 mb-1">Foto de la Propiedad</label>
-          <input ref={fileRef} type="file" accept="image/*" className="hidden"
-            onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0])} />
-          {form.image_url ? (
-            <div className="relative inline-block">
-              <img src={form.image_url} alt="preview" className="w-full max-w-xs h-36 object-cover rounded-lg border border-gray-200" />
-              <button type="button" onClick={() => setForm(prev => ({ ...prev, image_url: null }))}
-                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600">
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          ) : (
-            <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
-              className="flex items-center gap-2 border-2 border-dashed border-gray-300 hover:border-[#C9A840] rounded-lg px-6 py-4 text-sm text-gray-500 hover:text-[#0a1628] transition-colors disabled:opacity-50">
-              {uploading ? <><Loader2 className="w-4 h-4 animate-spin" /> Subiendo...</> : <><Upload className="w-4 h-4" /> Subir foto desde tu computadora</>}
-            </button>
-          )}
-          <div className="sm:col-span-2 mt-2">
-            <Field label="O pega URL de imagen" name="image_url" value={form.image_url} onChange={set('image_url')} help="URL directa de la imagen (jpg, png, webp)" />
+          {(() => {
+            const MAX_PHOTOS = 15
+            const atMax = imageUrls.length >= MAX_PHOTOS
+            return (
+              <>
+                <label className="block text-xs font-semibold text-gray-700 mb-2">
+                  Fotos de la Propiedad
+                  <span className={`ml-2 font-normal ${atMax ? 'text-amber-600' : 'text-gray-400'}`}>
+                    ({imageUrls.length}/{MAX_PHOTOS} fotos{imageUrls.length > 0 ? ' · la primera es la principal' : ''})
+                  </span>
+                </label>
+                <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
+                  onChange={e => { if (e.target.files) { handleFilesSelected(Array.from(e.target.files).slice(0, MAX_PHOTOS - imageUrls.length)); e.target.value = '' } }} />
+
+                {/* Drop zone — only show when not at max */}
+                {!atMax && (
+                  <div
+                    onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={handleDrop}
+                    onClick={() => fileRef.current?.click()}
+                    className={`cursor-pointer border-2 border-dashed rounded-xl px-6 py-5 text-center transition-all ${
+                      dragOver
+                        ? 'border-[#C9A840] bg-amber-50'
+                        : 'border-gray-300 hover:border-[#C9A840] hover:bg-gray-50'
+                    }`}
+                  >
+                    {uploadingCount > 0 ? (
+                      <div className="flex items-center justify-center gap-2 text-sm text-amber-700">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Subiendo {uploadingCount} foto{uploadingCount !== 1 ? 's' : ''}...
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-1 text-gray-500">
+                        <div className="flex items-center gap-2">
+                          <Upload className="w-4 h-4" />
+                          <ImagePlus className="w-4 h-4" />
+                        </div>
+                        <p className="text-sm font-medium text-gray-600">Arrastra fotos aquí o haz clic para seleccionar</p>
+                        <p className="text-xs text-gray-400">Puedes subir hasta {MAX_PHOTOS} fotos · JPG, PNG, WEBP · 20MB máx c/u</p>
+                        {imageUrls.length > 0 && (
+                          <p className="text-xs text-[#C9A840] font-semibold mt-1">
+                            {MAX_PHOTOS - imageUrls.length} espacio{MAX_PHOTOS - imageUrls.length !== 1 ? 's' : ''} disponible{MAX_PHOTOS - imageUrls.length !== 1 ? 's' : ''}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {atMax && (
+                  <div className="border-2 border-dashed border-amber-300 bg-amber-50 rounded-xl px-6 py-4 text-center">
+                    <p className="text-sm font-semibold text-amber-700">Límite de {MAX_PHOTOS} fotos alcanzado</p>
+                    <p className="text-xs text-amber-600 mt-0.5">Elimina alguna foto para poder agregar más</p>
+                  </div>
+                )}
+
+                {uploadError && (
+                  <div className="mt-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">
+                    {uploadError}
+                  </div>
+                )}
+
+                {/* Gallery preview */}
+                {imageUrls.length > 0 && (
+                  <div className="mt-3 grid grid-cols-3 sm:grid-cols-5 gap-2">
+                    {imageUrls.map((url, idx) => (
+                      <div key={url + idx} className="relative group rounded-lg overflow-hidden border border-gray-200">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={url} alt={`foto ${idx + 1}`} className="w-full h-24 object-cover" />
+                        {idx === 0 && (
+                          <div className="absolute top-1 left-1 bg-[#C9A840] text-[#0a1628] text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                            <Star className="w-2.5 h-2.5" /> Principal
+                          </div>
+                        )}
+                        <div className="absolute top-1 right-1 bg-black/50 text-white text-[10px] px-1 rounded">
+                          {idx + 1}
+                        </div>
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                          {idx !== 0 && (
+                            <button type="button" onClick={() => setPrimary(idx)}
+                              title="Hacer principal"
+                              className="bg-[#C9A840] text-[#0a1628] rounded-full p-1 hover:bg-yellow-400">
+                              <Star className="w-3 h-3" />
+                            </button>
+                          )}
+                          <button type="button" onClick={() => removeImage(idx)}
+                            className="bg-red-500 text-white rounded-full p-1 hover:bg-red-600">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {/* Add more button within grid */}
+                    {!atMax && uploadingCount === 0 && (
+                      <button type="button" onClick={() => fileRef.current?.click()}
+                        className="rounded-lg border-2 border-dashed border-gray-300 hover:border-[#C9A840] hover:bg-gray-50 h-24 flex flex-col items-center justify-center gap-1 text-gray-400 hover:text-[#C9A840] transition-all">
+                        <ImagePlus className="w-5 h-5" />
+                        <span className="text-[10px] font-semibold">Agregar</span>
+                      </button>
+                    )}
+                    {uploadingCount > 0 && (
+                      <div className="rounded-lg border-2 border-dashed border-amber-300 bg-amber-50 h-24 flex flex-col items-center justify-center gap-1 text-amber-600">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span className="text-[10px] font-semibold">{uploadingCount} subiendo...</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )
+          })()}
+
+          <div className="mt-2">
+            <Field label="O pega URL de imagen" name="image_url" value={imageUrls[0] ?? form.image_url} onChange={v => { if (v) setImageUrls(prev => prev.length ? [v, ...prev.slice(1)] : [v]); else setImageUrls(prev => prev.slice(1)) }} help="URL directa de la imagen principal (jpg, png, webp)" />
           </div>
         </div>
 
@@ -276,7 +418,7 @@ export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
           className="flex-1 bg-[#0a1628] hover:bg-[#152238] text-white font-bold py-3 px-6 rounded-xl transition-colors disabled:opacity-50">
           {loading ? 'Guardando...' : propertyId ? 'Guardar Cambios' : 'Crear Propiedad'}
         </button>
-        <button type="button" onClick={() => router.push('/admin')}
+        <button type="button" onClick={() => { window.location.href = '/admin' }}
           className="px-6 py-3 border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors font-medium">
           Cancelar
         </button>
