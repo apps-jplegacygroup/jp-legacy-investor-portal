@@ -1,23 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { handleUpload, type HandleUploadBody } from '@vercel/blob/client'
+import { put } from '@vercel/blob'
 
 export async function POST(req: NextRequest) {
-  const body = await req.json() as HandleUploadBody
+  const adminKey = req.headers.get('x-admin-key')
+  if (adminKey !== process.env.ADMIN_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   try {
-    const jsonResponse = await handleUpload({
-      body,
-      request: req,
-      onBeforeGenerateToken: async () => ({
-        allowedContentTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
-        maximumSizeInBytes: 20 * 1024 * 1024,
-        addRandomSuffix: true,
-      }),
-      onUploadCompleted: async () => {},
-    })
-    return NextResponse.json(jsonResponse)
+    const formData = await req.formData()
+    const file = formData.get('file') as File | null
+    if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+
+    const blob = await put(file.name, file, { access: 'public', addRandomSuffix: true })
+    return NextResponse.json({ url: blob.url })
   } catch (err) {
     console.error('Upload error:', err)
-    return NextResponse.json({ error: String(err) }, { status: 400 })
+    return NextResponse.json({ error: String(err) }, { status: 500 })
   }
 }
