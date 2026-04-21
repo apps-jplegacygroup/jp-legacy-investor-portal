@@ -34,10 +34,16 @@ export default async function HomePage() {
               <p className="text-white/60 text-xs">eXp Realty</p>
             </div>
           </div>
-          <a href="https://www.jplegacygroup.com" target="_blank" rel="noopener noreferrer"
-            className="hidden md:flex items-center gap-1.5 bg-[#C9A840] hover:bg-[#e0c060] text-[#0a1628] font-bold text-sm px-4 py-2 rounded-lg transition-colors">
-            jplegacygroup.com <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+          <div className="flex items-center gap-3">
+            <a href="https://wa.me/14076271966" target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white font-bold text-sm px-4 py-2 rounded-lg transition-colors">
+              WhatsApp
+            </a>
+            <a href="https://www.jplegacygroup.com" target="_blank" rel="noopener noreferrer"
+              className="hidden md:flex items-center gap-1.5 bg-[#C9A840] hover:bg-[#e0c060] text-[#0a1628] font-bold text-sm px-4 py-2 rounded-lg transition-colors">
+              jplegacygroup.com <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
         </div>
       </header>
 
