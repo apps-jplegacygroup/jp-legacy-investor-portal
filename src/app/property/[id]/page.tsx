@@ -393,6 +393,10 @@ export default function PropertyPage() {
             </div>
           </a>
           <div className="flex items-center gap-3">
+            <a href="/"
+              className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs px-3 py-2 rounded-lg transition-colors border border-white/20 no-print">
+              <ChevronLeft className="w-3.5 h-3.5" /> {lang === 'en' ? 'All Properties' : 'Ver Propiedades'}
+            </a>
             {/* Language Toggle */}
             <div className="flex items-center border border-white/20 rounded-lg overflow-hidden text-xs font-bold">
               <button
