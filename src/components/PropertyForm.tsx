@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
-import { upload } from '@vercel/blob/client'
+import { useState } from 'react'
 import { PropertyFormData } from '@/lib/types'
-import { Upload, X, Loader2, ImagePlus, Star } from 'lucide-react'
+import { X, Loader2, ImagePlus } from 'lucide-react'
 
 const defaultValues: PropertyFormData = {
   address: '',
@@ -91,17 +90,14 @@ function Section({ title, children, accent }: { title: string; children: React.R
 export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
   const [form, setForm] = useState<PropertyFormData>({ ...defaultValues, ...initial })
   const [loading, setLoading] = useState(false)
-  const [uploadingCount, setUploadingCount] = useState(0)
+  const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
   const [error, setError] = useState('')
-  const [dragOver, setDragOver] = useState(false)
-  const fileRef = useRef<HTMLInputElement>(null)
-
-  const [imageUrls, setImageUrls] = useState<string[]>(() => {
+  const [imageUrl, setImageUrl] = useState<string>(() => {
     const isReal = (url: string) => url.startsWith('http://') || url.startsWith('https://')
-    if (initial?.image_urls && initial.image_urls.length > 0) return initial.image_urls.filter(isReal)
-    if (initial?.image_url && isReal(initial.image_url)) return [initial.image_url]
-    return []
+    if (initial?.image_urls?.[0] && isReal(initial.image_urls[0])) return initial.image_urls[0]
+    if (initial?.image_url && isReal(initial.image_url)) return initial.image_url
+    return ''
   })
 
   const set = (field: keyof PropertyFormData) => (v: string) => {
@@ -123,52 +119,26 @@ export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
     })
   }
 
-  const uploadFile = async (file: File): Promise<string | null> => {
-    const blob = await upload(file.name, file, {
-      access: 'public',
-      handleUploadUrl: `/api/upload-image?adminKey=${encodeURIComponent(adminKey)}`,
-    })
-    return blob.url
-  }
-
-  const handleFilesSelected = useCallback(async (files: File[]) => {
-    const imageFiles = files.filter(f => f.type.startsWith('image/'))
-    if (!imageFiles.length) return
+  const handleFileSelected = async (file: File) => {
+    if (!file.type.startsWith('image/')) return
     setUploadError('')
-    setUploadingCount(c => c + imageFiles.length)
-    let failed = 0
-    // Upload one at a time to avoid overwhelming the server
-    for (const file of imageFiles) {
-      try {
-        const url = await uploadFile(file)
-        if (url) setImageUrls(prev => [...prev, url])
-        else failed++
-      } catch (err) {
-        failed++
-        console.error('Upload failed for', file.name, err)
-        if (failed === 1) setUploadError(`Error subiendo "${file.name}": ${err instanceof Error ? err.message : 'Error desconocido'}`)
-      }
-      setUploadingCount(c => c - 1)
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/upload-image', {
+        method: 'POST',
+        headers: { 'x-admin-key': adminKey },
+        body: fd,
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error subiendo foto')
+      setImageUrl(data.url)
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Error desconocido')
+    } finally {
+      setUploading(false)
     }
-    if (failed > 1) setUploadError(`${failed} fotos no se pudieron subir. Intenta de nuevo.`)
-  }, [adminKey])
-
-  const removeImage = (idx: number) => {
-    setImageUrls(prev => prev.filter((_, i) => i !== idx))
-  }
-
-  const setPrimary = (idx: number) => {
-    setImageUrls(prev => {
-      const next = [...prev]
-      const [item] = next.splice(idx, 1)
-      return [item, ...next]
-    })
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragOver(false)
-    handleFilesSelected(Array.from(e.dataTransfer.files))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -180,8 +150,8 @@ export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
       const method = propertyId ? 'PUT' : 'POST'
       const submitData = {
         ...form,
-        image_url: imageUrls[0] || null,
-        image_urls: imageUrls.length > 0 ? imageUrls : null,
+        image_url: imageUrl || null,
+        image_urls: imageUrl ? [imageUrl] : null,
       }
       const res = await fetch(url, {
         method,
@@ -229,152 +199,50 @@ export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
         <Field label="Año de Construcción" name="year_built" type="number" value={form.year_built} onChange={set('year_built')} />
         <Field label="Pies Cuadrados (sqft)" name="sqft" type="number" value={form.sqft} onChange={set('sqft')} />
 
-        {/* Photo Upload */}
+        {/* Foto Principal */}
         <div className="sm:col-span-2">
-          {(() => {
-            const MAX_PHOTOS = 15
-            const atMax = imageUrls.length >= MAX_PHOTOS
-            return (
-              <>
-                <label className="block text-xs font-semibold text-gray-700 mb-2">
-                  Fotos de la Propiedad
-                  <span className={`ml-2 font-normal ${atMax ? 'text-amber-600' : 'text-gray-400'}`}>
-                    ({imageUrls.length}/{MAX_PHOTOS} fotos{imageUrls.length > 0 ? ' · la primera es la principal' : ''})
-                  </span>
-                </label>
-                <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
-                  onChange={e => { if (e.target.files) { handleFilesSelected(Array.from(e.target.files).slice(0, MAX_PHOTOS - imageUrls.length)); e.target.value = '' } }} />
+          <label className="block text-xs font-semibold text-gray-700 mb-2">Foto Principal</label>
 
-                {/* Drop zone — only show when not at max */}
-                {!atMax && (
-                  <div
-                    onDragOver={e => { e.preventDefault(); setDragOver(true) }}
-                    onDragLeave={() => setDragOver(false)}
-                    onDrop={handleDrop}
-                    onClick={() => fileRef.current?.click()}
-                    className={`cursor-pointer border-2 border-dashed rounded-xl px-6 py-5 text-center transition-all ${
-                      dragOver
-                        ? 'border-[#C9A840] bg-amber-50'
-                        : 'border-gray-300 hover:border-[#C9A840] hover:bg-gray-50'
-                    }`}
-                  >
-                    {uploadingCount > 0 ? (
-                      <div className="flex items-center justify-center gap-2 text-sm text-amber-700">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Subiendo {uploadingCount} foto{uploadingCount !== 1 ? 's' : ''}...
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center gap-1 text-gray-500">
-                        <div className="flex items-center gap-2">
-                          <Upload className="w-4 h-4" />
-                          <ImagePlus className="w-4 h-4" />
-                        </div>
-                        <p className="text-sm font-medium text-gray-600">Arrastra fotos aquí o haz clic para seleccionar</p>
-                        <p className="text-xs text-gray-400">Puedes subir hasta {MAX_PHOTOS} fotos · JPG, PNG, WEBP · 20MB máx c/u</p>
-                        {imageUrls.length > 0 && (
-                          <p className="text-xs text-[#C9A840] font-semibold mt-1">
-                            {MAX_PHOTOS - imageUrls.length} espacio{MAX_PHOTOS - imageUrls.length !== 1 ? 's' : ''} disponible{MAX_PHOTOS - imageUrls.length !== 1 ? 's' : ''}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+          {/* Preview */}
+          {imageUrl && (
+            <div className="relative mb-3 rounded-xl overflow-hidden border border-gray-200 w-full h-48">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={imageUrl} alt="foto principal" className="w-full h-full object-cover" />
+              <button type="button" onClick={() => setImageUrl('')}
+                className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition-colors">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
 
-                {atMax && (
-                  <div className="border-2 border-dashed border-amber-300 bg-amber-50 rounded-xl px-6 py-4 text-center">
-                    <p className="text-sm font-semibold text-amber-700">Límite de {MAX_PHOTOS} fotos alcanzado</p>
-                    <p className="text-xs text-amber-600 mt-0.5">Elimina alguna foto para poder agregar más</p>
-                  </div>
-                )}
+          {/* URL input */}
+          {!imageUrl && (
+            <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#C9A840] bg-white">
+              <span className="px-3 py-2 bg-gray-50 border-r border-gray-200 text-gray-400 text-sm">
+                <ImagePlus className="w-4 h-4" />
+              </span>
+              <input
+                type="url"
+                placeholder="https://... pega la URL de la foto"
+                className="flex-1 px-3 py-2 text-sm outline-none bg-white"
+                onBlur={e => { if (e.target.value.startsWith('http')) { setImageUrl(e.target.value); e.target.value = '' } }}
+              />
+            </div>
+          )}
 
-                {uploadError && (
-                  <div className="mt-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">
-                    {uploadError}
-                  </div>
-                )}
-
-                {/* Gallery preview */}
-                {imageUrls.length > 0 && (
-                  <div className="mt-3 grid grid-cols-3 sm:grid-cols-5 gap-2">
-                    {imageUrls.map((url, idx) => (
-                      <div key={url + idx} className="relative group rounded-lg overflow-hidden border border-gray-200">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={url} alt={`foto ${idx + 1}`} className="w-full h-24 object-cover" />
-                        {idx === 0 && (
-                          <div className="absolute top-1 left-1 bg-[#C9A840] text-[#0a1628] text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                            <Star className="w-2.5 h-2.5" /> Principal
-                          </div>
-                        )}
-                        <div className="absolute top-1 right-1 bg-black/50 text-white text-[10px] px-1 rounded">
-                          {idx + 1}
-                        </div>
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
-                          {idx !== 0 && (
-                            <button type="button" onClick={() => setPrimary(idx)}
-                              title="Hacer principal"
-                              className="bg-[#C9A840] text-[#0a1628] rounded-full p-1 hover:bg-yellow-400">
-                              <Star className="w-3 h-3" />
-                            </button>
-                          )}
-                          <button type="button" onClick={() => removeImage(idx)}
-                            className="bg-red-500 text-white rounded-full p-1 hover:bg-red-600">
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                    {/* Add more button within grid */}
-                    {!atMax && uploadingCount === 0 && (
-                      <button type="button" onClick={() => fileRef.current?.click()}
-                        className="rounded-lg border-2 border-dashed border-gray-300 hover:border-[#C9A840] hover:bg-gray-50 h-24 flex flex-col items-center justify-center gap-1 text-gray-400 hover:text-[#C9A840] transition-all">
-                        <ImagePlus className="w-5 h-5" />
-                        <span className="text-[10px] font-semibold">Agregar</span>
-                      </button>
-                    )}
-                    {uploadingCount > 0 && (
-                      <div className="rounded-lg border-2 border-dashed border-amber-300 bg-amber-50 h-24 flex flex-col items-center justify-center gap-1 text-amber-600">
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span className="text-[10px] font-semibold">{uploadingCount} subiendo...</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </>
-            )
-          })()}
-
-          {/* Paste multiple URLs */}
-          <div className="mt-3">
-            <label className="block text-xs font-semibold text-gray-700 mb-1">
-              O pega URLs de imágenes
-              <span className="ml-1 font-normal text-gray-400">(una por línea — de Ylopo, MLS, etc.)</span>
-            </label>
-            <textarea
-              rows={3}
-              placeholder={'https://cdn.ylopo.com/foto1.jpg\nhttps://cdn.ylopo.com/foto2.jpg\nhttps://cdn.ylopo.com/foto3.jpg'}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[#C9A840] font-mono text-gray-600 placeholder:text-gray-300 placeholder:font-sans"
-              onBlur={e => {
-                const MAX_PHOTOS = 15
-                const lines = e.target.value
-                  .split('\n')
-                  .map(l => l.trim())
-                  .filter(l => l.startsWith('http'))
-                if (!lines.length) return
-                setImageUrls(prev => {
-                  const merged = [...prev, ...lines]
-                  const unique = Array.from(new Set(merged))
-                  return unique.slice(0, MAX_PHOTOS)
-                })
-                e.target.value = ''
-              }}
-            />
-            <p className="text-xs text-gray-400 mt-1">Pega las URLs y haz clic fuera del campo para agregarlas a la galería</p>
-          </div>
+          {uploading && (
+            <div className="mt-2 flex items-center gap-2 text-sm text-amber-700">
+              <Loader2 className="w-4 h-4 animate-spin" /> Subiendo foto...
+            </div>
+          )}
+          {uploadError && (
+            <div className="mt-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">{uploadError}</div>
+          )}
+          <p className="text-xs text-gray-400 mt-1">Pega la URL de la foto principal</p>
         </div>
 
         <div className="sm:col-span-2">
-          <Field label="Link de Ylopo / MLS" name="ylopo_link" value={form.ylopo_link} onChange={set('ylopo_link')} />
+          <Field label="Link de Ylopo (para ver más fotos)" name="ylopo_link" value={form.ylopo_link} onChange={set('ylopo_link')} help="Los clientes podrán ver todas las fotos del MLS desde aquí" />
         </div>
         <div className="sm:col-span-2">
           <Field label="Link de Video (Instagram, YouTube, etc.)" name="video_url" value={form.video_url} onChange={set('video_url')} help="URL del video de Instagram, YouTube o cualquier plataforma" />
