@@ -12,6 +12,8 @@ interface ImportResult {
   data?: Partial<Property>
   error?: string
   savedId?: string
+  saving?: boolean
+  saveError?: string
 }
 
 const IMPORT_DEFAULTS = {
@@ -109,19 +111,27 @@ export default function AdminPage() {
   }
 
   const saveOne = async (uid: string, data: Partial<Property>) => {
-    const body = { ...IMPORT_DEFAULTS, ...data }
-    const res = await fetch('/api/properties', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
-      body: JSON.stringify(body),
-    })
-    if (res.ok) {
-      const saved = await res.json()
-      setImportResults(prev => prev.map(r => r.uid === uid ? { ...r, savedId: saved.id } : r))
-      setProperties(prev => [saved, ...prev])
-      return saved.id as string
+    setImportResults(prev => prev.map(r => r.uid === uid ? { ...r, saving: true, saveError: undefined } : r))
+    try {
+      const body = { ...IMPORT_DEFAULTS, ...data }
+      const res = await fetch('/api/properties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        body: JSON.stringify(body),
+      })
+      const json = await res.json()
+      if (res.ok) {
+        setImportResults(prev => prev.map(r => r.uid === uid ? { ...r, saving: false, savedId: json.id } : r))
+        setProperties(prev => [json, ...prev])
+        return json.id as string
+      } else {
+        setImportResults(prev => prev.map(r => r.uid === uid ? { ...r, saving: false, saveError: json.error || 'Error al guardar' } : r))
+        return null
+      }
+    } catch (e) {
+      setImportResults(prev => prev.map(r => r.uid === uid ? { ...r, saving: false, saveError: 'Error de conexión' } : r))
+      return null
     }
-    return null
   }
 
   const saveAllImported = async () => {
@@ -251,6 +261,7 @@ export default function AdminPage() {
                     {r.status === 'done' && r.data && (
                       <p className="text-xs text-gray-500">{r.data.address}, {r.data.city} · ${Number(r.data.purchase_price || 0).toLocaleString()}</p>
                     )}
+                  {r.saveError && <p className="text-xs text-red-500">{r.saveError}</p>}
                   </div>
                   {r.status === 'done' && r.savedId && (
                     <button onClick={() => router.push(`/admin/${r.savedId}/edit`)}
@@ -259,9 +270,9 @@ export default function AdminPage() {
                     </button>
                   )}
                   {r.status === 'done' && !r.savedId && (
-                    <button onClick={() => saveOne(r.uid, r.data!)}
-                      className="flex-shrink-0 text-xs bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 rounded-lg hover:bg-green-100 font-semibold whitespace-nowrap">
-                      Guardar
+                    <button onClick={() => saveOne(r.uid, r.data!)} disabled={r.saving}
+                      className="flex-shrink-0 flex items-center gap-1 text-xs bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 rounded-lg hover:bg-green-100 font-semibold whitespace-nowrap disabled:opacity-50">
+                      {r.saving ? <><Loader2 className="w-3 h-3 animate-spin" /> Guardando...</> : 'Guardar'}
                     </button>
                   )}
                 </div>
