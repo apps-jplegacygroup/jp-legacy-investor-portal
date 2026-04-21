@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { PropertyFormData } from '@/lib/types'
-import { X, Loader2, ImagePlus } from 'lucide-react'
+import { X, ImagePlus } from 'lucide-react'
 
 const defaultValues: PropertyFormData = {
   address: '',
@@ -90,7 +90,6 @@ function Section({ title, children, accent }: { title: string; children: React.R
 export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
   const [form, setForm] = useState<PropertyFormData>({ ...defaultValues, ...initial })
   const [loading, setLoading] = useState(false)
-  const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
   const [error, setError] = useState('')
   const [imageUrl, setImageUrl] = useState<string>(() => {
@@ -117,28 +116,6 @@ export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
       }
       return next
     })
-  }
-
-  const handleFileSelected = async (file: File) => {
-    if (!file.type.startsWith('image/')) return
-    setUploadError('')
-    setUploading(true)
-    try {
-      const fd = new FormData()
-      fd.append('file', file)
-      const res = await fetch('/api/upload-image', {
-        method: 'POST',
-        headers: { 'x-admin-key': adminKey },
-        body: fd,
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Error subiendo foto')
-      setImageUrl(data.url)
-    } catch (err) {
-      setUploadError(err instanceof Error ? err.message : 'Error desconocido')
-    } finally {
-      setUploading(false)
-    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -230,11 +207,6 @@ export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
             </div>
           )}
 
-          {uploading && (
-            <div className="mt-2 flex items-center gap-2 text-sm text-amber-700">
-              <Loader2 className="w-4 h-4 animate-spin" /> Subiendo foto...
-            </div>
-          )}
           {uploadError && (
             <div className="mt-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">{uploadError}</div>
           )}
