@@ -344,8 +344,32 @@ export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
             )
           })()}
 
-          <div className="mt-2">
-            <Field label="O pega URL de imagen" name="image_url" value={imageUrls[0] ?? form.image_url} onChange={v => { if (v) setImageUrls(prev => prev.length ? [v, ...prev.slice(1)] : [v]); else setImageUrls(prev => prev.slice(1)) }} help="URL directa de la imagen principal (jpg, png, webp)" />
+          {/* Paste multiple URLs */}
+          <div className="mt-3">
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
+              O pega URLs de imágenes
+              <span className="ml-1 font-normal text-gray-400">(una por línea — de Ylopo, MLS, etc.)</span>
+            </label>
+            <textarea
+              rows={3}
+              placeholder={'https://cdn.ylopo.com/foto1.jpg\nhttps://cdn.ylopo.com/foto2.jpg\nhttps://cdn.ylopo.com/foto3.jpg'}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[#C9A840] font-mono text-gray-600 placeholder:text-gray-300 placeholder:font-sans"
+              onBlur={e => {
+                const MAX_PHOTOS = 15
+                const lines = e.target.value
+                  .split('\n')
+                  .map(l => l.trim())
+                  .filter(l => l.startsWith('http'))
+                if (!lines.length) return
+                setImageUrls(prev => {
+                  const merged = [...prev, ...lines]
+                  const unique = Array.from(new Set(merged))
+                  return unique.slice(0, MAX_PHOTOS)
+                })
+                e.target.value = ''
+              }}
+            />
+            <p className="text-xs text-gray-400 mt-1">Pega las URLs y haz clic fuera del campo para agregarlas a la galería</p>
           </div>
         </div>
 
