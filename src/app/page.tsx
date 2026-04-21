@@ -158,12 +158,31 @@ export default async function HomePage() {
               </div>
             </div>
           </div>
+          {/* Contact section */}
+          <div className="border-t border-white/10 pt-8 mb-8">
+            <p className="text-xs font-bold text-[#C9A840] uppercase tracking-widest mb-5">Contáctanos</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+              <div>
+                <p className="text-white font-semibold mb-1">Teléfono</p>
+                <a href="tel:+14079744129" className="text-gray-400 hover:text-[#C9A840] transition-colors">+1 (407) 974-4129</a>
+              </div>
+              <div>
+                <p className="text-white font-semibold mb-1">Email</p>
+                <a href="mailto:contact@jplegacygroup.com" className="text-gray-400 hover:text-[#C9A840] transition-colors">contact@jplegacygroup.com</a>
+              </div>
+              <div>
+                <p className="text-white font-semibold mb-1">Orlando – Main Office</p>
+                <p className="text-gray-400 text-xs leading-relaxed">Brokered by eXp Realty<br />401 S Rosalind Ave, Unit 100<br />Orlando, FL 32801</p>
+              </div>
+            </div>
+          </div>
+
           <div className="border-t border-white/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
             <p className="text-xs text-gray-600">
               © {new Date().getFullYear()} JP Legacy Group. Los números son proyecciones estimadas.
             </p>
-            <p className="text-xs text-gray-600">
-              Este análisis es informativo. Consulta con un asesor financiero antes de invertir.
+            <p className="text-xs text-gray-600 text-center max-w-lg">
+              JP Legacy Group is a real estate team operating under eXp Realty, LLC, a licensed real estate brokerage in the State of Florida (License # CQ1062304).
             </p>
           </div>
         </div>
