@@ -771,14 +771,6 @@ export default function PropertyPage() {
           </section>
         </div>
 
-        {/* Disclaimer */}
-        <section className="bg-gray-50 border border-gray-200 rounded-xl p-5 text-xs text-gray-500 leading-relaxed">
-          <p className="font-bold text-gray-700 mb-2 uppercase tracking-wide text-xs">{t.disclaimerTitle}</p>
-          <p>{t.disclaimerBody1}</p>
-          <p className="mt-2">{t.disclaimerBody2}</p>
-          <p className="mt-2 text-gray-400">{t.disclaimerBody3}</p>
-        </section>
-
         {/* Amortization toggle */}
         <section>
           <button onClick={() => setShowAmort(!showAmort)}
@@ -832,6 +824,14 @@ export default function PropertyPage() {
         </section>
 
         </>}
+
+        {/* Disclaimer — always visible */}
+        <section className="bg-gray-50 border border-gray-200 rounded-xl p-5 text-xs text-gray-500 leading-relaxed">
+          <p className="font-bold text-gray-700 mb-2 uppercase tracking-wide text-xs">{t.disclaimerTitle}</p>
+          <p>{t.disclaimerBody1}</p>
+          <p className="mt-2">{t.disclaimerBody2}</p>
+          <p className="mt-2 text-gray-400">{t.disclaimerBody3}</p>
+        </section>
 
       </main>
 
