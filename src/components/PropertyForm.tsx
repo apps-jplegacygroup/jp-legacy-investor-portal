@@ -112,7 +112,7 @@ export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
       if (field === 'purchase_price' && v) {
         const price = Number(v)
         if (price > 0) {
-          if (!prev.insurance || prev.insurance === 0) next.insurance = Math.round(price * 0.01)
+          if (!prev.insurance || prev.insurance === 0) next.insurance = Math.round(price * 0.008)
           if (!prev.property_tax || prev.property_tax === 0) next.property_tax = Math.round(price * 0.015)
         }
       }

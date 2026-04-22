@@ -32,7 +32,7 @@ function withEstimatedExpenses(data: Partial<Property>): Partial<Property> {
   const price = Number(data.purchase_price || 0)
   return {
     ...data,
-    insurance: data.insurance || (price > 0 ? Math.round(price * 0.01) : 5000),
+    insurance: data.insurance || (price > 0 ? Math.round(price * 0.008) : 4000),
     property_tax: data.property_tax || (price > 0 ? Math.round(price * 0.015) : 6000),
   }
 }
