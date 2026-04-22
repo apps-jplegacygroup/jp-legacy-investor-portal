@@ -263,6 +263,7 @@ export default function PropertyPage() {
   const [showAmort, setShowAmort] = useState(false)
   const [showCalc, setShowCalc] = useState(false)
   const [showCharts, setShowCharts] = useState(false)
+  const [showDetails, setShowDetails] = useState(false)
   const [activeYear, setActiveYear] = useState(1)
   const [calcInputs, setCalcInputs] = useState<CalcFields | null>(null)
   const [scenario, setScenario] = useState<'actual' | 'mejorado'>('actual')
@@ -683,6 +684,29 @@ export default function PropertyPage() {
           propertyAddress={property.address}
         />
 
+        {/* Collapsible detailed analysis */}
+        <section className="no-print">
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            className="w-full flex items-center justify-between px-5 py-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors text-[#0a1628]"
+          >
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-gray-400" />
+              <span className="font-semibold text-sm text-gray-600">
+                {showDetails
+                  ? (lang === 'en' ? 'Hide detailed analysis' : 'Ocultar análisis detallado')
+                  : (lang === 'en' ? 'View detailed analysis' : 'Ver análisis detallado')}
+              </span>
+              <span className="text-xs text-gray-400">
+                {lang === 'en' ? '(charts, expenses, loan, amortization)' : '(gráficas, gastos, préstamo, amortización)'}
+              </span>
+            </div>
+            {showDetails ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+          </button>
+        </section>
+
+        {showDetails && <>
+
         {/* Charts Section */}
         <section>
           <button
@@ -806,6 +830,9 @@ export default function PropertyPage() {
             </div>
           )}
         </section>
+
+        </>}
+
       </main>
 
       {/* Footer */}

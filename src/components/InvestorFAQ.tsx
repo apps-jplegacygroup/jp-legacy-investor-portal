@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { DollarSign, Wallet, Home, TrendingUp, Repeat2, Shield, ChevronDown, ChevronUp, MessageCircle, Phone } from 'lucide-react'
 import {
   formatCurrency,
-  calculateFHADown,
   calculateRefiAvailable,
   calculateAnnualCashFlow,
   calculateEquityRecoveryPercent,
@@ -41,7 +40,7 @@ function Em({ children }: { children: React.ReactNode }) {
 }
 
 export default function InvestorFAQ({
-  purchasePrice, downPayment, closingCosts, totalCashToClose,
+  purchasePrice, closingCosts, totalCashToClose,
   monthlyMortgage, monthlyCashFlowAT, numUnits,
   equityAccumulated5yr, propertyType, propertyAddress,
   calendlyUrl, whatsappNumber,
@@ -49,9 +48,8 @@ export default function InvestorFAQ({
   const [openQ, setOpenQ] = useState<string>('q1')
 
   const isMulti = propertyType === 'multi'
-  const fhaDown = calculateFHADown(purchasePrice)
-  const fhaClosingCosts = Math.round(purchasePrice * 0.04)
-  const fhaTotalCash = fhaDown + fhaClosingCosts
+  const minDown = Math.round(purchasePrice * 0.20)
+  const minTotalCash = minDown + closingCosts
   const refiAvailable = calculateRefiAvailable(equityAccumulated5yr)
   const annualCashFlow = calculateAnnualCashFlow(monthlyCashFlowAT)
   const equityRecoveryPct = calculateEquityRecoveryPercent(equityAccumulated5yr, totalCashToClose)
@@ -61,56 +59,69 @@ export default function InvestorFAQ({
 
   const q1Answer = monthlyCashFlowAT > 0
     ? isMulti
-      ? <>
-          Sí, y los números hablan solos. <Au>{numUnits} inquilinos</Au> pagando renta al mismo tiempo.
-          Después de cubrir la hipoteca de <Em>{formatCurrency(monthlyMortgage)}/mes</Em> y los gastos, te quedan{' '}
-          <Em>{formatCurrency(monthlyCashFlowAT)} limpios cada mes</Em> —{' '}
+      ? (
+        <p>
+          Si, y los numeros hablan solos. <Au>{numUnits} inquilinos</Au> pagando renta al mismo tiempo.
+          Despues de cubrir la hipoteca de <Em>{formatCurrency(monthlyMortgage)}/mes</Em> y los gastos,
+          te quedan <Em>{formatCurrency(monthlyCashFlowAT)} limpios cada mes</Em> —{' '}
           <Em>{formatCurrency(annualCashFlow)} al año</Em> entrando a tu cuenta sin hacer nada extra.
-          Mientras tú lo piensas, alguien más está cobrando esa renta.
-        </>
-      : <>
-          Sí. Después de cubrir la hipoteca de <Em>{formatCurrency(monthlyMortgage)}/mes</Em>, te quedan{' '}
-          <Em>{formatCurrency(monthlyCashFlowAT)} limpios cada mes</Em> —{' '}
-          <Em>{formatCurrency(annualCashFlow)} al año</Em>. Es renta pasiva real, no proyección optimista.
-        </>
-    : <>
-        En esta propiedad el juego no es el cash flow mensual — es la apreciación y el equity.
-        En 5 años tu patrimonio crece a <Au>{formatCurrency(equityAccumulated5yr)}</Au> mientras
-        los inquilinos pagan el préstamo. El cash llega, pero llega en forma de patrimonio.
-      </>
+          Mientras tu lo piensas, alguien mas esta cobrando esa renta.
+        </p>
+      )
+      : (
+        <p>
+          Si. Despues de cubrir la hipoteca de <Em>{formatCurrency(monthlyMortgage)}/mes</Em>,
+          te quedan <Em>{formatCurrency(monthlyCashFlowAT)} limpios cada mes</Em> —{' '}
+          <Em>{formatCurrency(annualCashFlow)} al año</Em>. Es renta pasiva real, no proyeccion optimista.
+        </p>
+      )
+    : (
+      <p>
+        En esta propiedad el juego no es el cash flow mensual — es la apreciacion y el equity.
+        En 5 anos tu patrimonio crece a <Au>{formatCurrency(equityAccumulated5yr)}</Au> mientras
+        los inquilinos pagan el prestamo. El cash llega, pero llega en forma de patrimonio.
+      </p>
+    )
 
   const q2Answer = isMulti
-    ? <>
-        Depende de cómo entres. Si te mudas a una unidad, usas financiamiento FHA con{' '}
-        <Em>3.5% de inicial ({formatCurrency(fhaDown)})</Em> más los gastos de cierre
-        (aprox. <Em>{formatCurrency(fhaClosingCosts)}</Em>) — en total{' '}
-        <Em>{formatCurrency(fhaTotalCash)} en efectivo</Em> para entrar a un activo de{' '}
-        <Au>{formatCurrency(purchasePrice)}</Au>. Como inversión pura (sin ocuparla),
-        el cash-to-close total es <Au>{formatCurrency(totalCashToClose)}</Au>.
-        La diferencia es grande — pero la herramienta correcta depende de tu estrategia, no de tu presupuesto.
-      </>
-    : <>
-        El cash total que necesitas en la cuenta el día del cierre es{' '}
-        <Au>{formatCurrency(totalCashToClose)}</Au> — eso incluye los{' '}
-        <Au>{formatCurrency(downPayment)}</Au> de inicial más los{' '}
-        <Em>{formatCurrency(closingCosts)}</Em> de gastos de cierre. Si la ocupas primero con FHA,
-        el número baja a aproximadamente <Em>{formatCurrency(fhaTotalCash)}</Em>.
-        Siempre te muestro el número completo, no solo el down payment.
-      </>
+    ? (
+      <p>
+        La inversion minima para entrar como inversionista es{' '}
+        <Au>20% de inicial ({formatCurrency(minDown)})</Au> mas los gastos de cierre{' '}
+        (<Em>{formatCurrency(closingCosts)}</Em>) — en total{' '}
+        <Em>{formatCurrency(minTotalCash)} en efectivo</Em> para entrar a un activo de{' '}
+        <Au>{formatCurrency(purchasePrice)}</Au>. Si decides ocupar una unidad, puedes calificar
+        para financiamiento con menos entrada y reducir ese numero.
+        La herramienta correcta depende de tu estrategia, no de tu presupuesto.
+      </p>
+    )
+    : (
+      <p>
+        La inversion minima es <Au>20% de inicial ({formatCurrency(minDown)})</Au> mas
+        los gastos de cierre (<Em>{formatCurrency(closingCosts)}</Em>) — en total{' '}
+        <Em>{formatCurrency(minTotalCash)} en efectivo</Em> para entrar a un activo de{' '}
+        <Au>{formatCurrency(purchasePrice)}</Au>. Siempre te muestro el numero completo:
+        no solo el down payment, sino todo lo que necesitas tener en la cuenta el dia del cierre.
+      </p>
+    )
 
   const q4Answer = equityRecoveryPct >= 50
-    ? <>
+    ? (
+      <p>
         El "payback" solo por cash flow te cuenta media historia. La otra mitad — la que realmente
         construye riqueza — es el equity. En <Au>5 años</Au> esta propiedad te suma{' '}
         <Au>{formatCurrency(equityAccumulated5yr)}</Au> de patrimonio. Eso es el{' '}
         <Au>{equityRecoveryPct}%</Au> del cash total que invertiste (incluyendo gastos de cierre),
         recuperado solo en equity — sin contar el cash flow que sigue entrando todos los meses.
-      </>
-    : <>
-        En 5 años esta propiedad construye <Au>{formatCurrency(equityAccumulated5yr)}</Au> de
-        patrimonio mientras sigues recibiendo cash flow mensual. La recuperación no viene de un solo
-        número — viene de la suma de equity + renta + apreciación.
-      </>
+      </p>
+    )
+    : (
+      <p>
+        En 5 anos esta propiedad construye <Au>{formatCurrency(equityAccumulated5yr)}</Au> de
+        patrimonio mientras sigues recibiendo cash flow mensual. La recuperacion no viene de un solo
+        numero — viene de la suma de equity + renta + apreciacion.
+      </p>
+    )
 
   const questions = [
     {
@@ -130,12 +141,12 @@ export default function InvestorFAQ({
       icon: Home,
       question: '¿Puedo vivir en una y rentar las demás?',
       answer: (
-        <>
-          Sí, y probablemente es la estrategia que más sentido hace hoy. Tú ocupas una unidad,
-          el inquilino de la otra cubre tu hipoteca. En la práctica:{' '}
+        <p>
+          Si, y probablemente es la estrategia que mas sentido hace hoy. Tu ocupas una unidad,
+          el inquilino de la otra cubre tu hipoteca. En la practica:{' '}
           <Au>dejas de pagar renta y empiezas a construir patrimonio al mismo tiempo.</Au> Dos cosas
-          que la mayoría piensa que son incompatibles, pero aquí sí se pueden hacer juntas.
-        </>
+          que la mayoria piensa que son incompatibles, pero aqui si se pueden hacer juntas.
+        </p>
       ),
     }] : []),
     {
@@ -149,14 +160,14 @@ export default function InvestorFAQ({
       icon: Repeat2,
       question: '¿Después puedo comprar otra?',
       answer: (
-        <>
-          Esa es justamente la jugada completa. En 5 años esta propiedad construye{' '}
-          <Au>{formatCurrency(equityAccumulated5yr)}</Au> de equity. De ahí puedes sacar hasta{' '}
+        <p>
+          Esa es justamente la jugada completa. En 5 anos esta propiedad construye{' '}
+          <Au>{formatCurrency(equityAccumulated5yr)}</Au> de equity. De ahi puedes sacar hasta{' '}
           <Em>{formatCurrency(refiAvailable)}</Em> con un cash-out refi y usarlo como inicial
           (y closing costs) de la siguiente propiedad —{' '}
-          <Au>sin tocar tus ahorros</Au>. La primera propiedad es la más difícil de cerrar.
+          <Au>sin tocar tus ahorros</Au>. La primera propiedad es la mas dificil de cerrar.
           Las siguientes las financia la anterior.
-        </>
+        </p>
       ),
     },
     ...(isMulti ? [{
@@ -164,13 +175,13 @@ export default function InvestorFAQ({
       icon: Shield,
       question: '¿Y si los inquilinos no pagan o se desocupa una?',
       answer: (
-        <>
+        <p>
           Esa es la ventaja real de tener <Au>{numUnits} unidades</Au> en vez de una casa sola.
           Si un inquilino no paga, las otras unidades siguen cubriendo el{' '}
           <Em>{coverageRemaining}%</Em> de la hipoteca — no pierdes el 100% del ingreso como
-          pasaría en un single-family. Es el mismo principio que aplica en cualquier inversión sólida:
+          pasaria en un single-family. Es el mismo principio que aplica en cualquier inversion solida:
           no dependes de una sola fuente.
-        </>
+        </p>
       ),
     }] : []),
   ]
@@ -179,7 +190,6 @@ export default function InvestorFAQ({
 
   return (
     <section className="space-y-4">
-      {/* Section header */}
       <div className="flex items-start gap-3 mb-6">
         <div className="w-10 h-10 rounded-xl bg-[#0a1628] flex items-center justify-center flex-shrink-0 mt-0.5">
           <MessageCircle className="w-5 h-5 text-[#C9A840]" />
@@ -192,7 +202,6 @@ export default function InvestorFAQ({
         </div>
       </div>
 
-      {/* Accordion */}
       <div className="rounded-xl border border-gray-200 overflow-hidden divide-y divide-gray-100 shadow-sm">
         {questions.map(({ id, icon: Icon, question, answer }) => {
           const isOpen = openQ === id
@@ -216,7 +225,7 @@ export default function InvestorFAQ({
                 }
               </button>
               {isOpen && (
-                <div className="px-5 pb-5 transition-all duration-300 ease-in-out">
+                <div className="px-5 pb-5">
                   <div className="ml-11 text-sm text-gray-200 leading-relaxed">
                     {answer}
                   </div>
@@ -227,7 +236,6 @@ export default function InvestorFAQ({
         })}
       </div>
 
-      {/* CTA */}
       {hasCTA && (
         <div className="bg-gradient-to-br from-[#0a1628] to-[#152238] rounded-xl p-6 border border-white/10 text-center">
           <h3 className="text-base font-bold text-white mb-1">
@@ -239,22 +247,15 @@ export default function InvestorFAQ({
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             {calendlyUrl && (
-              <a
-                href={calendlyUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 bg-[#C9A840] hover:bg-[#e0c060] text-[#0a1628] font-bold text-sm px-6 py-3 rounded-xl transition-colors"
-              >
+              <a href={calendlyUrl} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 bg-[#C9A840] hover:bg-[#e0c060] text-[#0a1628] font-bold text-sm px-6 py-3 rounded-xl transition-colors">
                 <Phone className="w-4 h-4" /> Agendar llamada
               </a>
             )}
             {whatsappNumber && (
-              <a
-                href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Me interesa ${propertyAddress}`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white font-bold text-sm px-6 py-3 rounded-xl transition-colors border border-white/20"
-              >
+              <a href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent('Me interesa ' + propertyAddress)}`}
+                target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white font-bold text-sm px-6 py-3 rounded-xl transition-colors border border-white/20">
                 <MessageCircle className="w-4 h-4" /> WhatsApp
               </a>
             )}
