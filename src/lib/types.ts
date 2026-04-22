@@ -10,6 +10,7 @@ export interface Property {
   baths_per_unit: number
   year_built: number | null
   sqft: number | null
+  closing_costs_percent: number
   image_url: string | null
   image_urls: string[] | null
   ylopo_link: string | null
@@ -86,6 +87,8 @@ export interface YearlyProjection {
 export interface FinancialSummary {
   loanAmount: number
   equityAmount: number
+  closingCosts: number
+  totalCashToClose: number
   monthlyPayment: number
   sumOfPayments: number
   interestCost: number
@@ -106,6 +109,7 @@ export interface PropertyFormData {
   baths_per_unit: number
   year_built: number | null
   sqft: number | null
+  closing_costs_percent: number
   image_url: string | null
   image_urls: string[] | null
   ylopo_link: string | null

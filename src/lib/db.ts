@@ -18,6 +18,7 @@ async function runMigrations(p: Pool) {
   try {
     await p.query('ALTER TABLE properties ADD COLUMN IF NOT EXISTS image_urls TEXT[]')
     await p.query("ALTER TABLE properties ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'available'")
+    await p.query('ALTER TABLE properties ADD COLUMN IF NOT EXISTS closing_costs_percent NUMERIC NOT NULL DEFAULT 4')
     migrationDone = true
   } catch {
     migrationDone = true

@@ -114,7 +114,7 @@ export default function PropertyGrid({ properties }: { properties: Property[] })
               Number(p.property_mgmt_percent), Number(p.utilities_percent), Number(p.broker_fees),
               Number(p.hoa), Number(p.property_tax), Number(p.num_units), Number(p.tax_rate),
               Number(p.depreciation_years), Number(p.points_percent), Number(p.other_equity_spent),
-              Number(p.total_equity_invested)
+              Number(p.total_equity_invested), Number(p.closing_costs_percent) || 4
             )
             const y1 = f.projections[0]
             return (

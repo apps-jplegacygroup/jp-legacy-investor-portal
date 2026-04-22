@@ -57,11 +57,14 @@ export function calculateFinancials(
   depreciationYears: number,
   pointsPercent: number,
   otherEquitySpent: number,
-  totalEquityInvested: number
+  totalEquityInvested: number,
+  closingCostsPercent: number = 4
 ): FinancialSummary {
   const loanPercent = 1 - equityPercent / 100
   const loanAmount = purchasePrice * loanPercent
   const equityAmount = purchasePrice * (equityPercent / 100)
+  const closingCosts = purchasePrice * (closingCostsPercent / 100)
+  const totalCashToClose = equityAmount + closingCosts
   const initialEquity = equityAmount + otherEquitySpent
 
   const monthlyPayment = calculateMonthlyPayment(loanAmount, annualInterestRate, loanTermYears)
@@ -118,7 +121,7 @@ export function calculateFinancials(
 
     cumulativePrincipal += yearlyPrincipal
 
-    const effectiveEquity = totalEquityInvested > 0 ? totalEquityInvested : equityAmount
+    const effectiveEquity = totalEquityInvested > 0 ? totalEquityInvested : totalCashToClose
     const cashOnCashBT = btCashFlowYearly / effectiveEquity
     const atCoCROE = atCashFlowYearly / effectiveEquity
 
@@ -170,12 +173,14 @@ export function calculateFinancials(
     })
   }
 
-  const effectiveEquityForPayback = totalEquityInvested > 0 ? totalEquityInvested : equityAmount
+  const effectiveEquityForPayback = totalEquityInvested > 0 ? totalEquityInvested : totalCashToClose
   const paybackPeriod = effectiveEquityForPayback / projections[0].btCashFlowYearly
 
   return {
     loanAmount,
     equityAmount,
+    closingCosts,
+    totalCashToClose,
     monthlyPayment,
     sumOfPayments,
     interestCost,

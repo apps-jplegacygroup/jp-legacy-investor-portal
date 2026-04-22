@@ -15,6 +15,7 @@ const defaultValues: PropertyFormData = {
   baths_per_unit: 1,
   year_built: null,
   sqft: null,
+  closing_costs_percent: 4,
   image_url: null,
   image_urls: null,
   ylopo_link: null,
@@ -199,6 +200,7 @@ export default function PropertyForm({ initial, propertyId, adminKey }: Props) {
         <Field label="Baños por Unidad" name="baths_per_unit" type="number" value={form.baths_per_unit} onChange={set('baths_per_unit')} />
         <Field label="Año de Construcción" name="year_built" type="number" value={form.year_built} onChange={set('year_built')} />
         <Field label="Pies Cuadrados (sqft)" name="sqft" type="number" value={form.sqft} onChange={set('sqft')} />
+        <Field label="Gastos de Cierre (%)" name="closing_costs_percent" type="number" suffix="%" value={form.closing_costs_percent} onChange={set('closing_costs_percent')} help="Default: 4% del precio de compra" />
 
         {/* Foto Principal */}
         <div className="sm:col-span-2">

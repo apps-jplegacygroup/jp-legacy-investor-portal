@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 
 const FinancialCharts = dynamic(() => import('@/components/FinancialCharts'), { ssr: false })
+const InvestorFAQ = dynamic(() => import('@/components/InvestorFAQ'), { ssr: false })
 
 type Lang = 'es' | 'en'
 
@@ -40,9 +41,11 @@ const T = {
     monthlyRentY1: 'Renta Mensual Año 1',
     rentIncrease: 'Incremento de Renta %',
     vacancy: 'Vacancia %',
+    closingCostsPct: 'Gastos de Cierre %',
     restoreValues: 'Restaurar valores originales',
     investmentSummary: 'Resumen de Inversión',
     downPayment: 'Down Payment',
+    totalCashToClose: 'TOTAL CASH TO CLOSE',
     monthlyPaymentLabel: 'Pago Mensual (Hipoteca)',
     cashFlowY1: 'Cash Flow Mensual (Yr 1)',
     afterTax: 'After tax',
@@ -127,9 +130,11 @@ const T = {
     monthlyRentY1: 'Monthly Rent Year 1',
     rentIncrease: 'Rent Increase %',
     vacancy: 'Vacancy %',
+    closingCostsPct: 'Closing Costs %',
     restoreValues: 'Restore original values',
     investmentSummary: 'Investment Summary',
     downPayment: 'Down Payment',
+    totalCashToClose: 'TOTAL CASH TO CLOSE',
     monthlyPaymentLabel: 'Monthly Payment (Mortgage)',
     cashFlowY1: 'Monthly Cash Flow (Yr 1)',
     afterTax: 'After tax',
@@ -248,6 +253,7 @@ function CalcInput({ label, value, onChange, prefix, suffix, min, max, step }: {
 type CalcFields = {
   purchase_price: string; equity_percent: string; annual_interest_rate: string
   monthly_rent_year1: string; rent_increase_percent: string; vacancy_rate: string
+  closing_costs_percent: string
 }
 
 export default function PropertyPage() {
@@ -284,6 +290,7 @@ export default function PropertyPage() {
       monthly_rent_year1: String(rent),
       rent_increase_percent: String(Number(property.rent_increase_percent)),
       vacancy_rate: String(Number(property.vacancy_rate)),
+      closing_costs_percent: String(Number(property.closing_costs_percent) || 4),
     }
   }, [property, scenario])
 
@@ -307,7 +314,8 @@ export default function PropertyPage() {
       Number(property.property_mgmt_percent), Number(property.utilities_percent), Number(property.broker_fees),
       Number(property.hoa), Number(property.property_tax), Number(property.num_units), Number(property.tax_rate),
       Number(property.depreciation_years), Number(property.points_percent), Number(property.other_equity_spent),
-      Number(property.total_equity_invested)
+      Number(property.total_equity_invested),
+      Number(inputs.closing_costs_percent) || 4
     )
   }, [property, inputs])
 
@@ -549,6 +557,7 @@ export default function PropertyPage() {
                 <CalcInput label={t.monthlyRentY1} value={inputs.monthly_rent_year1} onChange={updateInput('monthly_rent_year1')} prefix="$" min="0" />
                 <CalcInput label={t.rentIncrease} value={inputs.rent_increase_percent} onChange={updateInput('rent_increase_percent')} suffix="%" min="0" max="20" step="0.5" />
                 <CalcInput label={t.vacancy} value={inputs.vacancy_rate} onChange={updateInput('vacancy_rate')} suffix="%" min="0" max="50" step="0.5" />
+                <CalcInput label={t.closingCostsPct} value={inputs.closing_costs_percent} onChange={updateInput('closing_costs_percent')} suffix="%" min="2" max="6" step="0.25" />
               </div>
               {isDirty && (
                 <button onClick={resetCalc}
@@ -563,10 +572,13 @@ export default function PropertyPage() {
         {/* Key Investment Numbers */}
         <section>
           <SectionTitle icon={DollarSign} title={t.investmentSummary} />
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <StatCard label={t.purchasePrice} value={fmtCurrency(Number(inputs.purchase_price))} color="navy" />
             <StatCard label={t.downPayment} value={fmtCurrency(financials.equityAmount)}
-              sub={`${inputs.equity_percent}% del precio`} highlight color="gold" />
+              sub={`${inputs.equity_percent}% del precio`} color="gold" />
+            <StatCard label={t.totalCashToClose} value={fmtCurrency(financials.totalCashToClose)}
+              sub={`${fmtCurrency(financials.equityAmount)} down + ${fmtCurrency(financials.closingCosts)} cierre`}
+              highlight color="gold" />
             <StatCard label={t.monthlyPaymentLabel} value={fmtCurrency(financials.monthlyPayment)}
               sub={`${inputs.annual_interest_rate}% · ${property.loan_term_years} ${t.years}`} />
             <StatCard label={t.cashFlowY1} value={fmtCurrency(financials.projections[0].atCashFlowMonthly)}
@@ -648,6 +660,28 @@ export default function PropertyPage() {
             </div>
           </div>
         </section>
+
+        {/* Investor FAQ */}
+        <InvestorFAQ
+          purchasePrice={Number(inputs.purchase_price)}
+          downPayment={financials.equityAmount}
+          downPaymentPercent={Number(inputs.equity_percent)}
+          closingCosts={financials.closingCosts}
+          totalCashToClose={financials.totalCashToClose}
+          monthlyMortgage={financials.monthlyPayment}
+          monthlyCashFlowAT={financials.projections[0].atCashFlowMonthly}
+          monthlyCashFlowBT={financials.projections[0].btCashFlowMonthly}
+          cashFlowPerUnit={financials.projections[0].atCashFlowPerUnit}
+          numUnits={Number(property.num_units)}
+          capRate={financials.projections[0].capRate * 100}
+          cashOnCashBT={financials.projections[0].cashOnCashBT * 100}
+          roiTotalBT={financials.projections[0].btROI * 100}
+          paybackYears={financials.paybackPeriod}
+          equityAccumulated5yr={financials.projections[4].equityDollars}
+          propertyType={Number(property.num_units) > 1 ? 'multi' : 'single'}
+          city={property.city}
+          propertyAddress={property.address}
+        />
 
         {/* Charts Section */}
         <section>
