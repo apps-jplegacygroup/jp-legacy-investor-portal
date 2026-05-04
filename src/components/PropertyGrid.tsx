@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Property } from '@/lib/types'
 import { calculateFinancials, fmtCurrency, fmtPercent } from '@/lib/calculations'
-import { Building2, MapPin, BedDouble, Bath, TrendingUp, ArrowRight, MapPinned } from 'lucide-react'
+import { Building2, MapPin, BedDouble, Bath, TrendingUp, ArrowRight, MapPinned, Lock } from 'lucide-react'
 
 const METRO_MAP: Record<string, string> = {
   'Tampa': 'Tampa Metro',
@@ -142,11 +142,20 @@ export default function PropertyGrid({ properties }: { properties: Property[] })
                       </span>
                       <span className="text-xs text-gray-500">{p.property_type}</span>
                     </div>
-                    <h3 className="font-bold text-[#0a1628] text-base mb-1 leading-tight">{p.address}</h3>
-                    <div className="flex items-center gap-1 text-gray-500 text-xs mb-4">
-                      <MapPin className="w-3.5 h-3.5 text-[#C9A840]" />
-                      {p.city}, {p.state}
-                    </div>
+                    <h3 className="font-bold text-[#0a1628] text-base mb-1 leading-tight">
+                      {p.city}, {p.state} · ZIP {p.zip}
+                    </h3>
+                    <a
+                      href={`https://wa.me/14076271966?text=${encodeURIComponent(`Hola, me interesa conocer la dirección completa de esta propiedad en ZIP ${p.zip}, ${p.city}, ${p.state} (${fmtCurrency(Number(p.purchase_price))}). Link: ${typeof window !== 'undefined' ? window.location.origin : ''}/property/${p.id} ¿Pueden ayudarme?`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={e => e.stopPropagation()}
+                      className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-green-600 transition-colors mb-4 group/wa"
+                    >
+                      <Lock className="w-3 h-3 text-gray-400 group-hover/wa:text-green-500" />
+                      <span>Dirección privada</span>
+                      <span className="text-green-600 font-semibold group-hover/wa:underline">· Solicitar asesoría →</span>
+                    </a>
                     <div className="flex gap-3 text-xs text-gray-500 mb-4">
                       <span className="flex items-center gap-1"><BedDouble className="w-3.5 h-3.5" /> {p.beds_per_unit} hab</span>
                       <span className="flex items-center gap-1"><Bath className="w-3.5 h-3.5" /> {p.baths_per_unit} baños</span>
